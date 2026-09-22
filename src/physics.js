@@ -30,12 +30,12 @@ export class EnginePhysics{
   if(a<180)p=pInt;
   else if(a<360)p=pInt*Math.pow(vB/V,GAMMA);
   else if(a<520){
-   const comp=pInt*Math.pow(vB/Vc,GAMMA);
+   const comp=pInt*Math.pow(vB/vc,GAMMA);
    const ignition=this.type==='diesel'?350:360-this.sparkAdvance;
    const burn=smooth(ignition,ignition+16,a)*(1-smooth(ignition+55,ignition+120,a));
    const heat=this.type==='diesel'?23:14;
    p=comp*Math.pow(1+heat*Math.pow(clamp(throttle,0,1),.5)*burn,GAMMA);
-   p=Math.max(p,comp*Math.pow(Vc/V,GAMMA));
+   p=Math.max(p,comp*Math.pow(vc/V,GAMMA));
   }else p=108e3;
   return clamp(p,8e4,1.8e7)
  }
