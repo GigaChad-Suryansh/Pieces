@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js';
+import {RoundedBoxGeometry} from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 const engines={
  i4:{name:'2.0L Inline-4',sub:'Petrol · DOHC · 16 valves',cyl:4,bore:1.75,stroke:2.05},
@@ -62,37 +63,37 @@ const catalog=[
 ];
 const info=Object.fromEntries(catalog.map(x=>[x[1],{system:x[0],desc:x[2]}]));
 const state={engine:'i4',selected:'Piston',system:'All',search:'',explode:false,cutaway:false,isolate:false,running:false,rpm:900,cycle:0};
-let scene,camera,renderer,controls,raycaster,mouse,root,parts=[],moving=[],last=performance.now();
+let scene,camera,renderer,controls,raycaster,mouse,root,parts=[],moving=[],last=performance.now(),focusTarget=new THREE.Vector3(0,.7,0),focusCamera=new THREE.Vector3(10,6.5,13);
 
 document.querySelector('#app').innerHTML=`
 <header class="topbar"><div class="brand">ENGINE <span>ATLAS</span></div><div class="search"><span>⌕</span><input id="search" placeholder="Search parts, systems, engines…"></div><nav><button class="nav active" data-tab="library">Library</button><button class="nav" data-tab="learn">Learn</button><button class="nav" data-tab="compare">Compare</button></nav><kbd>K</kbd><div class="avatar">S</div></header>
 <main class="appShell"><section class="intro"><div><span class="eyebrow">MICRO-MECHANICS / 3D EXPLORER</span><h1>See how an engine<br><em>actually moves.</em></h1><p>Explore everyday road engines, reveal their hidden mechanisms and follow combustion down to individual components.</p></div><div class="stats"><b>50+</b><span>catalogued parts</span><b>4</b><span>road-engine families</span><b>720°</b><span>four-stroke cycle</span></div></section><section id="workspace"></section></main>`;
 
-const M={steel:new THREE.MeshStandardMaterial({color:0x777a78,roughness:.32,metalness:.85}),alloy:new THREE.MeshStandardMaterial({color:0xbfc2be,roughness:.48,metalness:.7}),dark:new THREE.MeshStandardMaterial({color:0x202322,roughness:.3,metalness:.8}),black:new THREE.MeshStandardMaterial({color:0x141615,roughness:.65,metalness:.15}),red:new THREE.MeshStandardMaterial({color:0xb94139,roughness:.4,metalness:.35}),blue:new THREE.MeshStandardMaterial({color:0x416fa4,roughness:.42,metalness:.35}),gold:new THREE.MeshStandardMaterial({color:0xc79439,roughness:.3,metalness:.75}),rubber:new THREE.MeshStandardMaterial({color:0x202220,roughness:.82}),white:new THREE.MeshStandardMaterial({color:0xe5e6e2,roughness:.55,metalness:.15})};
-const geo={box:(x,y,z)=>new THREE.BoxGeometry(x,y,z),cyl:(r,h,s=24)=>new THREE.CylinderGeometry(r,r,h,s),tor:(R,r)=>new THREE.TorusGeometry(R,r,12,36)};
+const M={steel:new THREE.MeshPhysicalMaterial({color:0x777b78,roughness:.25,metalness:.9,clearcoat:.18}),alloy:new THREE.MeshPhysicalMaterial({color:0xc4c7c3,roughness:.34,metalness:.78,clearcoat:.22}),dark:new THREE.MeshPhysicalMaterial({color:0x252827,roughness:.23,metalness:.88,clearcoat:.12}),black:new THREE.MeshPhysicalMaterial({color:0x121413,roughness:.58,metalness:.2}),red:new THREE.MeshPhysicalMaterial({color:0xb94139,roughness:.28,metalness:.48,clearcoat:.25}),blue:new THREE.MeshPhysicalMaterial({color:0x3d6ea4,roughness:.3,metalness:.45,clearcoat:.2}),gold:new THREE.MeshPhysicalMaterial({color:0xd0a044,roughness:.22,metalness:.86,clearcoat:.2}),rubber:new THREE.MeshStandardMaterial({color:0x202220,roughness:.8}),white:new THREE.MeshPhysicalMaterial({color:0xe7e8e4,roughness:.4,metalness:.25,clearcoat:.18}),copper:new THREE.MeshPhysicalMaterial({color:0xa85f35,roughness:.24,metalness:.82})};
+const geo={box:(x,y,z,r=.12)=>new RoundedBoxGeometry(x,y,z,4,r),cyl:(r,h,s=32)=>new THREE.CylinderGeometry(r,r,h,s),tor:(R,r)=>new THREE.TorusGeometry(R,r,16,48)};
 function add(g,m,name,system,parent=root){const o=new THREE.Mesh(g,m);o.userData={part:name,system};o.castShadow=o.receiveShadow=true;parent.add(o);parts.push(o);return o}
 function init3D(){
  const el=document.querySelector('#viewport');scene=new THREE.Scene();scene.background=new THREE.Color(0xf0f0ec);
  camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(10,6.5,13);
- renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;el.appendChild(renderer.domElement);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;el.appendChild(renderer.domElement);
  controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.075;controls.minDistance=5;controls.maxDistance=23;controls.target.set(0,.7,0);
  raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();
- scene.add(new THREE.HemisphereLight(0xffffff,0x777771,2.1));const l=new THREE.DirectionalLight(0xffffff,3.2);l.position.set(7,12,9);l.castShadow=true;scene.add(l);const f=new THREE.DirectionalLight(0xb8c6d6,1.4);f.position.set(-8,4,-8);scene.add(f);
- const floor=new THREE.Mesh(new THREE.CircleGeometry(12,64),new THREE.MeshStandardMaterial({color:0xe2e2de,roughness:.92}));floor.rotation.x=-Math.PI/2;floor.position.y=-2.25;floor.receiveShadow=true;scene.add(floor);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x666862,2.35));const l=new THREE.DirectionalLight(0xffffff,4.2);l.position.set(7,12,9);l.castShadow=true;l.shadow.mapSize.set(2048,2048);l.shadow.camera.near=.1;l.shadow.camera.far=50;scene.add(l);const f=new THREE.DirectionalLight(0xc7d5e4,1.7);f.position.set(-8,5,-8);scene.add(f);const rim=new THREE.DirectionalLight(0xffd7b0,1.1);rim.position.set(4,3,-10);scene.add(rim);
+ const floor=new THREE.Mesh(new THREE.CircleGeometry(14,80),new THREE.MeshStandardMaterial({color:0xdedfd9,roughness:.88,metalness:.05}));floor.rotation.x=-Math.PI/2;floor.position.y=-2.25;floor.receiveShadow=true;scene.add(floor);const grid=new THREE.GridHelper(24,24,0xc7c8c2,0xd4d5d0);grid.position.y=-2.23;grid.material.opacity=.32;grid.material.transparent=true;scene.add(grid);const halo=new THREE.Mesh(new THREE.RingGeometry(6.5,6.55,96),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.7,side:THREE.DoubleSide}));halo.rotation.x=-Math.PI/2;halo.position.y=-2.2;scene.add(halo);
  build();resize();renderer.domElement.addEventListener('pointermove',pointer);renderer.domElement.addEventListener('click',pick);requestAnimationFrame(loop)
 }
 function build(){
  root=new THREE.Group();scene.add(root);parts=[];moving=[];const E=engines[state.engine],n=E.cyl,s=3,xs=Array.from({length:n},(_,i)=>(i-(n-1)/2)*s);
- const block=add(geo.box(n*2.55,3.8,4.8),M.alloy,'Engine block','Structure');const pan=add(geo.box(n*2.7,1.05,4.95),M.black,'Oil pan / sump','Structure');pan.position.y=-2.35;
- const head=add(geo.box(n*2.48,1.5,4.65),M.alloy,'Cylinder head','Structure');head.position.y=2.55;
- const cover=add(geo.box(n*2.42,.55,4.5),M.dark,'Valve cover','Structure');cover.position.y=3.62;
- const gasket=add(geo.box(n*2.36,.12,4.4),M.rubber,'Head gasket','Structure');gasket.position.y=1.78;
+ const block=add(geo.box(n*2.55,3.8,4.8,.2),M.alloy,'Engine block','Structure');const pan=add(geo.box(n*2.7,1.05,4.95,.18),M.black,'Oil pan / sump','Structure');pan.position.y=-2.35;
+ const head=add(geo.box(n*2.48,1.5,4.65,.18),M.alloy,'Cylinder head','Structure');head.position.y=2.55;
+ const cover=add(geo.box(n*2.42,.55,4.5,.14),M.dark,'Valve cover','Structure');cover.position.y=3.62;
+ const gasket=add(geo.box(n*2.36,.12,4.4,.04),M.rubber,'Head gasket','Structure');gasket.position.y=1.78;
  xs.forEach((x,i)=>{
   const liner=add(geo.cyl(E.bore,3.55,32),M.steel,'Cylinder liner','Structure');liner.position.x=x;liner.scale.z=.86;
   const piston=add(geo.cyl(E.bore*.9,.72,32),M.alloy,'Piston','Motion');piston.position.set(x,.4,0);
   for(let r=0;r<3;r++){const ring=add(geo.tor(E.bore*.9,.055),r===2?M.gold:M.dark,'Piston rings','Motion',piston);ring.rotation.x=Math.PI/2;ring.position.y=.22-r*.13}
   const pin=add(geo.cyl(.16,.9,20),M.steel,'Wrist pin','Motion',piston);pin.rotation.z=Math.PI/2;
-  const rod=add(geo.box(.34,2,.34),M.steel,'Connecting rod','Motion');rod.position.set(x,-.55,0);
+  const rod=add(geo.box(.34,2,.34,.06),M.steel,'Connecting rod','Motion');rod.position.set(x,-.55,0);rod.userData.baseScale=rod.scale.clone();
   const bearing=add(geo.cyl(.52,.38,24),M.dark,'Rod bearing','Motion');bearing.rotation.z=Math.PI/2;bearing.position.set(x,-1.48,0);
   const iv=add(geo.cyl(.13,.72,18),M.blue,'Intake valve','Valvetrain');iv.position.set(x-.48,2.03,.2);
   const ev=add(geo.cyl(.13,.72,18),M.red,'Exhaust valve','Valvetrain');ev.position.set(x+.48,2.03,.2);
@@ -106,25 +107,26 @@ function build(){
  const cam=add(geo.cyl(.24,n*3,24),M.dark,'Camshaft','Valvetrain');cam.rotation.z=Math.PI/2;cam.position.set(0,3,.75);
  xs.forEach(x=>[0,1].forEach(j=>{const l=add(geo.cyl(.42,.2,20),M.steel,'Cam lobe','Valvetrain');l.rotation.z=Math.PI/2;l.position.set(x+(j-.5)*.52,3,.75)}));
  const timing=add(geo.tor(1.2,.13),M.dark,'Timing chain / belt','Timing');timing.rotation.x=Math.PI/2;timing.position.set(-n*1.45,1,0);
- const intake=add(geo.box(n*2.35,.72,1.25),M.blue,'Intake manifold','Air & fuel');intake.position.set(0,3.08,2.55);
+ const intake=add(geo.box(n*2.35,.72,1.25,.12),M.blue,'Intake manifold','Air & fuel');intake.position.set(0,3.08,2.55);
  const throttle=add(geo.cyl(.48,1,24),M.steel,'Throttle body','Air & fuel');throttle.rotation.x=Math.PI/2;throttle.position.set(0,3.08,3.2);
- const exhaust=add(geo.box(n*2.3,.72,1),M.red,'Exhaust manifold','Air & fuel');exhaust.position.set(0,2.35,-2.45);
- const turbo=add(geo.tor(.8,.28),M.steel,'Turbocharger','Air & fuel');turbo.rotation.x=Math.PI/2;turbo.position.set(n*1.7,1.7,-3);
+ const exhaust=add(geo.box(n*2.3,.72,1,.12),M.red,'Exhaust manifold','Air & fuel');exhaust.position.set(0,2.35,-2.45);
+ const turbo=add(geo.tor(.82,.28),M.steel,'Turbocharger','Air & fuel');turbo.rotation.x=Math.PI/2;turbo.position.set(n*1.7,1.7,-3);const turboHub=add(geo.cyl(.28,.42,28),M.gold,'Turbocharger','Air & fuel',root);turboHub.rotation.x=Math.PI/2;turboHub.position.set(n*1.7,1.7,-3);for(let i=0;i<8;i++){const blade=add(geo.box(.08,.5,.04,.02),M.steel,'Turbocharger','Air & fuel',root);blade.position.set(n*1.7+Math.cos(i*Math.PI/4)*.42,1.7+Math.sin(i*Math.PI/4)*.42,-3);blade.rotation.z=i*Math.PI/4;}
  const oil=add(geo.cyl(.5,.42,24),M.dark,'Oil pump','Lubrication');oil.rotation.z=Math.PI/2;oil.position.set(-n*1.3,-1.9,.8);
  const filter=add(geo.cyl(.42,.75,24),M.white,'Oil filter','Lubrication');filter.position.set(-n*1.2,-.8,2.35);
  const water=add(geo.cyl(.65,.35,28),M.blue,'Water pump','Cooling');water.rotation.z=Math.PI/2;water.position.set(-n*1.5,0,2.35);
  const starter=add(geo.cyl(.38,1.1,24),M.dark,'Starter motor','Starting');starter.rotation.z=Math.PI/2;starter.position.set(n*1.7,-.8,2.1);
- const alt=add(geo.cyl(.62,.42,32),M.alloy,'Alternator','Starting');alt.rotation.z=Math.PI/2;alt.position.set(-n*1.65,1.15,2.2);
+ const alt=add(geo.cyl(.62,.42,32),M.alloy,'Alternator','Starting');alt.rotation.z=Math.PI/2;alt.position.set(-n*1.65,1.15,2.2);for(let i=0;i<10;i++){const fin=add(geo.box(.035,.42,.05,.01),M.dark,'Alternator','Starting',alt);fin.position.x=Math.cos(i*Math.PI/5)*.34;fin.position.y=Math.sin(i*Math.PI/5)*.34;fin.rotation.z=i*Math.PI/5;}
  updateVisibility();select(state.selected,false)
 }
 function updateVisibility(){
  parts.forEach(o=>o.visible=(state.system==='All'||o.userData.system===state.system)&&(!state.isolate||o.userData.part===state.selected));
  const block=parts.find(o=>o.userData.part==='Engine block');if(block)block.material=state.cutaway?new THREE.MeshStandardMaterial({color:0xb8bbb7,transparent:true,opacity:.15,metalness:.5,roughness:.55}):M.alloy;
 }
+function highlight(name){parts.forEach(o=>{if(o.userData.originalMaterial&&!o.userData.originalMaterial.emissive){};if(o.userData.highlighted&&o.userData.originalMaterial){o.material=o.userData.originalMaterial;o.userData.highlighted=false}});const selected=parts.filter(o=>o.userData.part===name);selected.forEach(o=>{if(!o.userData.originalMaterial)o.userData.originalMaterial=o.material;o.material=o.userData.originalMaterial.clone();if(o.material.emissive){o.material.emissive.set(0x6b706c);o.material.emissiveIntensity=.22}o.userData.highlighted=true})}
 function select(name,focus=true){
- state.selected=name;document.querySelectorAll('.partRow').forEach(x=>x.classList.toggle('selected',x.dataset.part===name));
+ state.selected=name;highlight(name);document.querySelectorAll('.partRow').forEach(x=>x.classList.toggle('selected',x.dataset.part===name));
  const d=document.querySelector('#detail');if(d)d.innerHTML=`<span class="detailLabel">${info[name]?.system||'ENGINE'} · COMPONENT</span><h3>${name}</h3><p>${info[name]?.desc||'Mechanical component in the engine assembly.'}</p><div class="chips"><span>3D SELECTABLE</span><span>INTERACTIVE</span></div>`;
- if(focus){const o=parts.find(x=>x.userData.part===name);if(o){controls.target.copy(o.getWorldPosition(new THREE.Vector3()));controls.update()}}
+ if(focus){const o=parts.find(x=>x.userData.part===name);if(o){focusTarget.copy(o.getWorldPosition(new THREE.Vector3()));const offset=new THREE.Vector3(4.8,2.8,6.5);focusCamera.copy(focusTarget).add(offset);}}
 }
 function pointer(e){const r=renderer.domElement.getBoundingClientRect();mouse.x=(e.clientX-r.left)/r.width*2-1;mouse.y=-(e.clientY-r.top)/r.height*2+1}
 function pick(){raycaster.setFromCamera(mouse,camera);const h=raycaster.intersectObjects(parts,true)[0];if(h){let o=h.object;while(o&&!o.userData.part)o=o.parent;if(o?.userData.part){select(o.userData.part);document.querySelectorAll('.partRow').forEach(x=>x.classList.toggle('selected',x.dataset.part===state.selected))}}}
@@ -139,7 +141,7 @@ function explode(){
   const target=o.userData.base.clone().add(d);o.position.lerp(state.explode?target:o.userData.base,.16);
  });
 }
-function loop(now){requestAnimationFrame(loop);const dt=Math.min(.04,(now-last)/1000);last=now;if(state.running)state.cycle=(state.cycle+dt*state.rpm*6)%720;moving.forEach(m=>{const a=state.cycle*Math.PI/180+m.phase,y=.1+Math.cos(a)*.82;m.piston.position.y=y;m.rod.position.y=(y-1.48)/2;m.rod.scale.y=Math.max(.4,Math.abs(y+1.48)/2)});explode();controls?.update();renderer?.render(scene,camera);if(state.running)requestRenderMeta()}
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.04,(now-last)/1000);last=now;if(state.running)state.cycle=(state.cycle+dt*state.rpm*6)%720;moving.forEach(m=>{const a=state.cycle*Math.PI/180+m.phase,y=.1+Math.cos(a)*.82;m.piston.position.y=y;m.rod.position.y=(y-1.48)/2;const crankX=Math.sin(a)*.7;m.rod.rotation.z=Math.atan2(crankX,1.7);m.rod.scale.y=Math.max(.4,Math.abs(y+1.48)/2)});explode();if(controls){controls.target.lerp(focusTarget,.06);camera.position.lerp(focusCamera,.035);controls.update()}renderer?.render(scene,camera);if(state.running)requestRenderMeta()}
 function requestRenderMeta(){const deg=document.querySelector('#cycleDeg');if(deg)deg.textContent=Math.round(state.cycle)+'°';const bar=document.querySelector('#cycleBar');if(bar)bar.style.width=state.cycle/7.2+'%'}
 function renderLibrary(){
  const systems=['All',...new Set(catalog.map(x=>x[0]))],q=state.search.toLowerCase();
@@ -161,7 +163,7 @@ function bindLibrary(){
  document.querySelector('#explodeBtn').onclick=()=>state.explode=!state.explode;
  document.querySelector('#cutBtn').onclick=()=>{state.cutaway=!state.cutaway;updateVisibility()};
  document.querySelector('#isoBtn').onclick=()=>{state.isolate=!state.isolate;updateVisibility()};
- document.querySelector('#reset').onclick=()=>{state.explode=false;state.cutaway=false;state.isolate=false;state.cycle=0;state.running=false;controls.reset();updateVisibility()};
+ document.querySelector('#reset').onclick=()=>{state.explode=false;state.cutaway=false;state.isolate=false;state.cycle=0;state.running=false;focusTarget.set(0,.7,0);focusCamera.set(10,6.5,13);controls.reset();updateVisibility();select(state.selected,false)};
  document.querySelector('#play').onclick=()=>state.running=!state.running;
  document.querySelector('#rpm').oninput=e=>{state.rpm=+e.target.value;e.target.nextElementSibling.textContent=state.rpm};
  document.querySelector('#clear').onclick=()=>{state.system='All';state.search='';document.querySelector('#search').value='';renderLibrary()}
