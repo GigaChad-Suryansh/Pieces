@@ -87,7 +87,7 @@ export class EnginePhysics{
    torque+=t;
    peak=Math.max(peak,p);
   }
-  return {torque:torque/steps*2,peak};
+  return {torque:torque/steps,peak};
  }
  step(dt){
   dt=Math.min(.03,Math.max(.0001,dt));
