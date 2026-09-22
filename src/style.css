@@ -176,3 +176,5 @@ kbd{font-size:10px;color:#8d9ab8;border:1px solid var(--line);background:rgba(25
  .learning,.compare{padding:22px}.cycle{width:190px}.panelTitle{padding-left:18px;padding-right:18px}
 }
 @media(max-width:500px){.telemetry div{padding:6px 7px}.telemetry span{font-size:6px}.telemetry b{font-size:11px}.intro p{font-size:14px}}
+
+.engineError{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);z-index:20;width:min(430px,80%);padding:22px;border:1px solid rgba(255,110,199,.35);border-radius:16px;background:rgba(7,11,24,.92);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center}.engineError b{display:block;font:700 18px 'Space Grotesk';color:#ff6ec7}.engineError span{display:block;color:#c5cce0;font:11px monospace;line-height:1.5;margin:10px 0;word-break:break-word}.engineError small{color:#7f8daa;font-size:10px}
