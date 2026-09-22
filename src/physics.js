@@ -25,7 +25,7 @@ export class EnginePhysics{
   this.temperature=92; this.manifoldPressure=35e3; this.torque=0; this.power=0;
   this.fuelRate=0; this.pressure=1e5; this.airMass=0; this.imep=0;
  }
- reset(){this.rpm=900;this.theta=0;this.temperature=92;this.torque=0;this.power=0;this.fuelRate=0;this.manifoldPressure=35e3}
+ reset(){this.rpm=900;this.theta=0;this.temperature=92;this.torque=0;this.power=0;this.fuelRate=0;this.manifoldPressure=35;this.boost=0;this.oil=95;this.exhaustTemp=280;this.knock=0;this.efficiency=0}
  displacementPerCylinder(){
   const s=this.spec,b=this.spec.bore,stroke=this.spec.stroke;
   return Math.PI*b*b/4*stroke;
@@ -116,9 +116,5 @@ export class EnginePhysics{
   this.temperature=90+clamp(this.pressure/1e6,0,12)*5+this.rpm*.004;
   return this.snapshot();
  }
- snapshot(){
-  return {rpm:this.rpm,theta:this.theta,torque:this.torque,power:this.power,
-   pressure:this.pressure/1e5,manifold:this.manifoldPressure/1000,
-   fuel:this.fuelRate*3600,temperature:this.temperature,imep:this.imep/1e5};
- }
+ snapshot(){return {rpm:this.rpm,theta:this.theta,torque:this.torque,power:this.power,pressure:this.pressure/1e5,manifold:this.manifoldPressure/1000,fuel:this.fuelRate*3600,temperature:this.temperature,oil:this.oil,exhaust:this.exhaustTemp,boost:this.boost,imep:this.imep/1e5,efficiency:this.efficiency*100,knock:this.knock*100};}
 }
