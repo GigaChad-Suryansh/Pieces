@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js';
+import {EnginePhysics} from './physics.js';
 import {RoundedBoxGeometry} from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 const engines={
@@ -62,7 +63,8 @@ const catalog=[
 ['Starting','Alternator','Generates electrical power and maintains the vehicle battery.']
 ];
 const info=Object.fromEntries(catalog.map(x=>[x[1],{system:x[0],desc:x[2]}]));
-const state={engine:'i4',selected:'Piston',system:'All',search:'',explode:false,cutaway:false,isolate:false,running:false,rpm:900,cycle:0};
+const state={engine:'i4',selected:'Piston',system:'All',search:'',explode:false,cutaway:false,isolate:false,running:false,rpm:900,cycle:0,throttle:18,load:25};
+let physics=new EnginePhysics(state.engine);
 let scene,camera,renderer,controls,raycaster,mouse,root,parts=[],moving=[],last=performance.now(),focusTarget=new THREE.Vector3(0,.7,0),focusCamera=new THREE.Vector3(10,6.5,13);
 
 document.querySelector('#app').innerHTML=`
@@ -73,6 +75,7 @@ const M={steel:new THREE.MeshPhysicalMaterial({color:0x777b78,roughness:.25,meta
 const geo={box:(x,y,z,r=.12)=>new RoundedBoxGeometry(x,y,z,4,r),cyl:(r,h,s=32)=>new THREE.CylinderGeometry(r,r,h,s),tor:(R,r)=>new THREE.TorusGeometry(R,r,16,48)};
 function add(g,m,name,system,parent=root){const o=new THREE.Mesh(g,m);o.userData={part:name,system};o.castShadow=o.receiveShadow=true;parent.add(o);parts.push(o);return o}
 function init3D(){
+ physics=new EnginePhysics(state.engine);physics.throttle=state.throttle/100;physics.load=state.load/100;physics.rpm=state.rpm;physics.theta=state.cycle;
  const el=document.querySelector('#viewport');scene=new THREE.Scene();scene.background=new THREE.Color(0xf0f0ec);
  camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(10,6.5,13);
  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;el.appendChild(renderer.domElement);
@@ -141,8 +144,8 @@ function explode(){
   const target=o.userData.base.clone().add(d);o.position.lerp(state.explode?target:o.userData.base,.16);
  });
 }
-function loop(now){requestAnimationFrame(loop);const dt=Math.min(.04,(now-last)/1000);last=now;if(state.running)state.cycle=(state.cycle+dt*state.rpm*6)%720;moving.forEach(m=>{const a=state.cycle*Math.PI/180+m.phase,y=.1+Math.cos(a)*.82;m.piston.position.y=y;m.rod.position.y=(y-1.48)/2;const crankX=Math.sin(a)*.7;m.rod.rotation.z=Math.atan2(crankX,1.7);m.rod.scale.y=Math.max(.4,Math.abs(y+1.48)/2)});explode();if(controls){controls.target.lerp(focusTarget,.06);camera.position.lerp(focusCamera,.035);controls.update()}renderer?.render(scene,camera);if(state.running)requestRenderMeta()}
-function requestRenderMeta(){const deg=document.querySelector('#cycleDeg');if(deg)deg.textContent=Math.round(state.cycle)+'°';const bar=document.querySelector('#cycleBar');if(bar)bar.style.width=state.cycle/7.2+'%'}
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.04,(now-last)/1000);last=now;if(state.running){physics.throttle=state.throttle/100;physics.load=state.load/100;const snap=physics.step(dt);state.rpm=snap.rpm;state.cycle=snap.theta}else{physics.theta=state.cycle;physics.rpm=state.rpm}moving.forEach(m=>{const a=state.cycle*Math.PI/180+m.phase,y=.1+Math.cos(a)*.82;m.piston.position.y=y;m.rod.position.y=(y-1.48)/2;const crankX=Math.sin(a)*.7;m.rod.rotation.z=Math.atan2(crankX,1.7);m.rod.scale.y=Math.max(.4,Math.abs(y+1.48)/2)});explode();if(controls){controls.target.lerp(focusTarget,.06);camera.position.lerp(focusCamera,.035);controls.update()}renderer?.render(scene,camera);if(state.running)requestRenderMeta()}
+function requestRenderMeta(){const deg=document.querySelector('#cycleDeg');if(deg)deg.textContent=Math.round(state.cycle)+'°';const bar=document.querySelector('#cycleBar');if(bar)bar.style.width=state.cycle/7.2+'%';const set=(id,v)=>{const e=document.querySelector(id);if(e)e.textContent=v};set('#teleRPM',Math.round(physics.rpm));set('#teleTorque',Math.round(physics.torque)+' Nm');set('#telePower',physics.power.toFixed(1)+' kW');set('#telePressure',physics.pressure.toFixed(1)+' bar');set('#teleTemp',Math.round(physics.temperature)+'°C')}
 function renderLibrary(){
  const systems=['All',...new Set(catalog.map(x=>x[0]))],q=state.search.toLowerCase();
  const list=catalog.filter(x=>(state.system==='All'||x[0]===state.system)&&(`${x[0]} ${x[1]} ${x[2]}`.toLowerCase().includes(q)));
@@ -151,7 +154,7 @@ function renderLibrary(){
  <div class="engineList">${Object.entries(engines).map(([id,e])=>`<button class="engineCard ${id===state.engine?'selected':''}" data-engine="${id}"><span class="engineIcon">◎</span><div><b>${e.name}</b><small>${e.sub}</small></div><i>↗</i></button>`).join('')}</div>
  <div class="catalogHead"><span class="eyebrow">SYSTEMS</span><button id="clear">CLEAR</button></div><div class="systemList">${systems.map(s=>`<button class="systemBtn ${s===state.system?'active':''}" data-system="${s}"><span class="dot"></span>${s}<small>${s==='All'?catalog.length:catalog.filter(x=>x[0]===s).length}</small></button>`).join('')}</div></aside>
  <section class="viewer panel"><div class="viewerHead"><div><span class="eyebrow">LIVE 3D ASSEMBLY</span><h2>${engines[state.engine].name}</h2><small>Orbit · zoom · click any component</small></div><div class="actions"><button id="explodeBtn">${state.explode?'ASSEMBLE':'EXPLODE'}</button><button id="cutBtn">${state.cutaway?'SOLID':'CUTAWAY'}</button><button id="isoBtn">${state.isolate?'SHOW ALL':'ISOLATE'}</button><button id="reset">RESET</button></div></div>
- <div id="viewport" class="viewport"><div class="hud"><b>INTERACTIVE MODEL</b><span>WEBGL · REAL TIME</span></div><div class="cycle"><span>CRANK ANGLE</span><b id="cycleDeg">${Math.round(state.cycle)}°</b><div class="cycleBar"><i id="cycleBar" style="width:${state.cycle/7.2}%"></i></div><button id="play">${state.running?'Ⅱ':'▶'}</button></div><label class="speed">RPM <input id="rpm" type="range" min="300" max="4000" value="${state.rpm}"><b>${state.rpm}</b></label></div>
+ <div id="viewport" class="viewport"><div class="hud"><b>PHYSICS ENGINE</b><span>THERMODYNAMIC · CRANK DYNAMICS</span></div><div class="telemetry"><div><span>RPM</span><b id="teleRPM">${Math.round(state.rpm)}</b></div><div><span>TORQUE</span><b id="teleTorque">0 Nm</b></div><div><span>POWER</span><b id="telePower">0 kW</b></div><div><span>CYL. PRESSURE</span><b id="telePressure">1 bar</b></div><div><span>COOLANT</span><b id="teleTemp">90°C</b></div></div><div class="cycle"><span>CRANK ANGLE</span><b id="cycleDeg">${Math.round(state.cycle)}°</b><div class="cycleBar"><i id="cycleBar" style="width:${state.cycle/7.2}%"></i></div><button id="play">${state.running?'Ⅱ':'▶'}</button></div><div class="physicsControls"><label>THROTTLE <input id="throttle" type="range" min="0" max="100" value="${state.throttle}"><b id="throttleVal">${state.throttle}%</b></label><label>LOAD <input id="load" type="range" min="0" max="100" value="${state.load}"><b id="loadVal">${state.load}%</b></label></div></div>
  <div id="detail" class="detail"></div></section></div>
  <section class="catalog panel"><div class="panelTitle"><div><span class="eyebrow">COMPONENT CATALOGUE</span><h2>${list.length} parts in view</h2></div><span class="subtle">Click a part to inspect it</span></div><div class="partsGrid">${list.map((x,i)=>`<button class="partRow ${x[1]===state.selected?'selected':''}" data-part="${x[1]}"><span class="num">${String(i+1).padStart(2,'0')}</span><span><b>${x[1]}</b><small>${x[2]}</small></span><em>${x[0]}</em></button>`).join('')}</div></section>`;
  bindLibrary();init3D()
@@ -163,9 +166,9 @@ function bindLibrary(){
  document.querySelector('#explodeBtn').onclick=()=>state.explode=!state.explode;
  document.querySelector('#cutBtn').onclick=()=>{state.cutaway=!state.cutaway;updateVisibility()};
  document.querySelector('#isoBtn').onclick=()=>{state.isolate=!state.isolate;updateVisibility()};
- document.querySelector('#reset').onclick=()=>{state.explode=false;state.cutaway=false;state.isolate=false;state.cycle=0;state.running=false;focusTarget.set(0,.7,0);focusCamera.set(10,6.5,13);controls.reset();updateVisibility();select(state.selected,false)};
+ document.querySelector('#reset').onclick=()=>{state.explode=false;state.cutaway=false;state.isolate=false;state.cycle=0;state.running=false;state.throttle=18;state.load=25;state.rpm=900;physics.reset();physics.throttle=.18;physics.load=.25;physics.rpm=900;focusTarget.set(0,.7,0);focusCamera.set(10,6.5,13);controls.reset();updateVisibility();select(state.selected,false);requestRenderMeta();document.querySelector('#throttle').value=18;document.querySelector('#load').value=25;document.querySelector('#throttleVal').textContent='18%';document.querySelector('#loadVal').textContent='25%'};
  document.querySelector('#play').onclick=()=>state.running=!state.running;
- document.querySelector('#rpm').oninput=e=>{state.rpm=+e.target.value;e.target.nextElementSibling.textContent=state.rpm};
+ document.querySelector('#throttle').oninput=e=>{state.throttle=+e.target.value;physics.throttle=state.throttle/100;document.querySelector('#throttleVal').textContent=state.throttle+'%'};document.querySelector('#load').oninput=e=>{state.load=+e.target.value;physics.load=state.load/100;document.querySelector('#loadVal').textContent=state.load+'%'};
  document.querySelector('#clear').onclick=()=>{state.system='All';state.search='';document.querySelector('#search').value='';renderLibrary()}
 }
 function learn(){
