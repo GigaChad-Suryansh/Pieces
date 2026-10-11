@@ -104,7 +104,10 @@ function build(){
   const piston=add(geo.cyl(E.bore*.9,.72,32),M.alloy,'Piston','Motion');piston.position.set(x,.4,0);
   for(let r=0;r<3;r++){const ring=add(geo.tor(E.bore*.9,.055),r===2?M.gold:M.dark,'Piston rings','Motion',piston);ring.rotation.x=Math.PI/2;ring.position.y=.22-r*.13}
   const pin=add(geo.cyl(.16,.9,20),M.steel,'Wrist pin','Motion',piston);pin.rotation.z=Math.PI/2;
-  const rod=add(geo.box(.34,2,.34,.06),M.steel,'Connecting rod','Motion');rod.position.set(x,-.55,0);rod.userData.baseScale=rod.scale.clone();
+  const rodShape=new THREE.Shape();
+  rodShape.moveTo(-.17,-.91);rodShape.lineTo(-.105,-.34);rodShape.lineTo(-.085,.34);rodShape.lineTo(-.15,.91);rodShape.lineTo(.15,.91);rodShape.lineTo(.085,.34);rodShape.lineTo(.105,-.34);rodShape.lineTo(.17,-.91);rodShape.closePath();
+  const rodGeometry=new THREE.ExtrudeGeometry(rodShape,{depth:.14,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.025,bevelThickness:.025});
+  const rod=add(rodGeometry,M.steel,'Connecting rod','Motion');rod.position.set(x,-.55,-.08);rod.userData.baseScale=rod.scale.clone();
   const bearing=add(geo.cyl(.52,.38,24),M.dark,'Rod bearing','Motion');bearing.rotation.z=Math.PI/2;bearing.position.set(x,-1.48,0);
   const iv=add(geo.cyl(.13,.72,18),M.blue,'Intake valve','Valvetrain');iv.position.set(x-.48,2.03,.2);
   const ev=add(geo.cyl(.13,.72,18),M.red,'Exhaust valve','Valvetrain');ev.position.set(x+.48,2.03,.2);valveParts.push({mesh:iv,baseY:iv.position.y,type:'intake',phase:[0,360,360,0,240,120][i]||0});valveParts.push({mesh:ev,baseY:ev.position.y,type:'exhaust',phase:[0,360,360,0,240,120][i]||0});
@@ -132,8 +135,8 @@ function build(){
  const bolt=(x,y,z,name='Cylinder head',system='Structure',radius=.075)=>{
    const b=add(new THREE.CylinderGeometry(radius,radius,.075,8),M.steel,name,system);
    b.position.set(x,y,z);b.rotation.y=Math.PI/8;
-   const slot=add(geo.box(radius*1.1,.012,.025,.002),M.dark,name,system,b);
-   slot.position.set(0,.039,0);
+   const slot=add(geo.box(radius*1.1,.012,.025,.002),M.dark,name,system);
+   slot.position.set(x,y+.039,z);
    return b;
  };
  const pipe=(points,name,system,material,radius=.12)=>{
