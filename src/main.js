@@ -116,7 +116,7 @@ function build(){
   const plug=add(geo.cyl(.09,.5,16),M.gold,'Spark plug','Ignition');plug.position.set(x,2.83,.2);
   // Transparent combustion volume sits in the chamber and lights only around the power stroke.
   const flameMat=new THREE.MeshBasicMaterial({color:0xff8a26,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
-  const flame=new THREE.Mesh(new THREE.IcosahedronGeometry(.43,2),flameMat);flame.position.set(x,1.42,.15);flame.scale.set(.82,.45,.82);root.add(flame);
+  const flame=new THREE.Mesh(new THREE.IcosahedronGeometry(.43,2),flameMat);flame.position.set(x,1.42,2.62);flame.scale.set(.82,.45,.82);root.add(flame);
   const coreMat=new THREE.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
   const flameCore=new THREE.Mesh(new THREE.IcosahedronGeometry(.22,1),coreMat);flameCore.position.copy(flame.position);root.add(flameCore);
   combustion.push({flame,flameCore,phase:[0,360,360,0,240,120][i]||0});
