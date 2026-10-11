@@ -10,7 +10,9 @@ An interactive Three.js engineering playground for exploring road-engine anatomy
 - Cutaway mode for revealing the internal mechanism.
 - Isolate mode for studying one component.
 - Live piston motion and 0–720° crank-angle cycle.
-- Animated crankshaft, connecting-rod, camshaft and valve motion.\n- Adjustable demonstration RPM and live engine telemetry.\n- Interactive three-question Engine IQ quiz with answer explanations.
+- Animated crankshaft, connecting-rod, camshaft and valve motion.
+- Adjustable demonstration RPM and live engine telemetry.
+- Interactive three-question Engine IQ quiz with answer explanations.
 - Engine library: inline-4, V6, turbo-diesel and motorcycle layouts.
 - 50+ catalogue entries across structure, motion, valvetrain, timing, air/fuel, ignition, cooling, lubrication, exhaust and starting systems.
 - Search and system filters.
