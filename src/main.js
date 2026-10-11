@@ -291,8 +291,8 @@ function build(){
      tooth.rotation.z=a;
    }
  }
- const case=add(geo.box(3.2,1.35,.22,.12),M.dark,'Gearbox','Transmission');
- case.position.set(gearOriginX+.55,gearOriginY-.15,gearOriginZ-.24);
+ const gearCase=add(geo.box(3.2,1.35,.22,.12),M.dark,'Gearbox','Transmission');
+ gearCase.position.set(gearOriginX+.55,gearOriginY-.15,gearOriginZ-.24);
  for(let i=0;i<8;i++){
    const x=gearOriginX-.75+(i%4)*.85,y=gearOriginY-.62+Math.floor(i/4)*.9;
    bolt(x,y,gearOriginZ-.37,'Gearbox','Transmission',.055);
