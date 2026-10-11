@@ -223,3 +223,28 @@ kbd{font-size:10px;color:#8d9ab8;border:1px solid var(--line);background:rgba(25
 .actions button[data-view]:hover{background:rgba(72,230,255,.16)}
 @media(max-width:800px){.simPresets{top:57px;left:10px;gap:3px}.simPresets>span{display:none}.simPresets button{padding:6px 7px}.cycle small{font-size:7px}}
 @media(max-width:500px){.simPresets{top:54px}.simPresets button{font-size:7px}.actions button[data-view]{display:none}}
+
+
+/* Combustion + dynamometer lab */
+.dyno{margin-top:16px;padding:20px 22px;background:linear-gradient(140deg,rgba(17,26,45,.98),rgba(9,14,26,.98));border-color:rgba(72,230,255,.18);color:#e9effa}
+.dyno .panelTitle h2{color:#f3f6ff}
+.dynoLayout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(220px,.85fr);gap:20px;align-items:stretch}
+.dynoPlotWrap{min-width:0;border:1px solid rgba(157,169,198,.16);border-radius:12px;padding:12px;background:rgba(3,8,18,.38)}
+#dynoPlot{display:block;width:100%;height:210px}
+.dynoAxis{display:flex;justify-content:space-between;font-size:8px;letter-spacing:.1em;color:#8391ab}
+.dynoSide{display:flex;flex-direction:column;gap:16px}
+.dynoMetrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dynoMetrics>div{padding:12px;border:1px solid rgba(157,169,198,.15);border-radius:10px;background:rgba(255,255,255,.025)}
+.dynoMetrics>div:last-child{grid-column:1/-1}
+.dynoMetrics span,.dynoLoadLabel{display:block;font-size:8px;letter-spacing:.12em;color:#8d9bb4;font-weight:800}
+.dynoMetrics b{display:block;margin-top:7px;font:700 22px 'Space Grotesk',sans-serif;color:#48e6ff}
+.dynoMetrics small{font-size:10px;color:#8d9bb4}
+.dynoLoadLabel input{display:block;width:100%;margin:11px 0 4px;accent-color:#48e6ff}
+.dynoLoadLabel>b{font-size:11px;color:#e9effa}
+.dynoButtons{display:flex;gap:8px;flex-wrap:wrap}
+.dynoButtons button{flex:1;min-width:110px;border:1px solid rgba(72,230,255,.28);border-radius:9px;padding:11px 12px;background:rgba(72,230,255,.1);color:#b9f5ff;font-size:9px;font-weight:800;letter-spacing:.08em;cursor:pointer}
+.dynoButtons button:first-child{background:linear-gradient(120deg,rgba(72,230,255,.2),rgba(155,124,255,.15));color:#fff}
+.dynoButtons button:hover{border-color:#48e6ff}
+.dynoNote{margin:0;font-size:10px;line-height:1.6;color:#8d9bb4}
+@media(max-width:850px){.dynoLayout{grid-template-columns:1fr}.dynoSide{display:grid;grid-template-columns:1fr 1fr;align-items:start}.dynoMetrics{grid-row:span 3}.dynoNote{grid-column:1/-1}}
+@media(max-width:560px){.dyno{padding:15px}.dynoSide{display:flex}.dynoMetrics{width:100%}#dynoPlot{height:180px}}
