@@ -1,6 +1,6 @@
-# Engine Atlas
+# Pieces 2.0 — Engineverse
 
-A smooth, educational WebGL engine-anatomy explorer for everyday car and motorcycle powerplants.
+An interactive Three.js engineering playground for exploring road-engine anatomy, component motion, live telemetry and engine fundamentals.
 
 ## Included
 
@@ -10,14 +10,14 @@ A smooth, educational WebGL engine-anatomy explorer for everyday car and motorcy
 - Cutaway mode for revealing the internal mechanism.
 - Isolate mode for studying one component.
 - Live piston motion and 0–720° crank-angle cycle.
-- Adjustable demonstration RPM.
+- Animated crankshaft, connecting-rod, camshaft and valve motion.\n- Adjustable demonstration RPM and live engine telemetry.\n- Interactive three-question Engine IQ quiz with answer explanations.
 - Engine library: inline-4, V6, turbo-diesel and motorcycle layouts.
 - 50+ catalogue entries across structure, motion, valvetrain, timing, air/fuel, ignition, cooling, lubrication, exhaust and starting systems.
 - Search and system filters.
 - Learn and Compare sections.
 - GitHub Pages deployment workflow.
 
-## Run locally
+## Engineverse 2.0 improvements\n\nThe Engine Lab keeps a single animation loop and disposes the previous renderer when switching engine models. Search and component-system filters update the catalogue without rebuilding the 3D scene, so the camera view stays put. The Learn tab includes an interactive quiz.\n\nThe procedural model is an educational abstraction, not manufacturer-specific CAD. Verify dimensions, crank phasing, valve timing and physics parameters against a named engine before treating the assembly as a precise engineering reference.\n\n## Run locally
 
 ```bash
 npm install
