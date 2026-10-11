@@ -104,7 +104,10 @@ function build(){
   const piston=add(geo.cyl(E.bore*.9,.72,32),M.alloy,'Piston','Motion');piston.position.set(x,.4,0);
   for(let r=0;r<3;r++){const ring=add(geo.tor(E.bore*.9,.055),r===2?M.gold:M.dark,'Piston rings','Motion',piston);ring.rotation.x=Math.PI/2;ring.position.y=.22-r*.13}
   const pin=add(geo.cyl(.16,.9,20),M.steel,'Wrist pin','Motion',piston);pin.rotation.z=Math.PI/2;
-  const rod=add(geo.box(.34,2,.34,.06),M.steel,'Connecting rod','Motion');rod.position.set(x,-.55,0);rod.userData.baseScale=rod.scale.clone();
+  const rodShape=new THREE.Shape();
+  rodShape.moveTo(-.17,-.91);rodShape.lineTo(-.105,-.34);rodShape.lineTo(-.085,.34);rodShape.lineTo(-.15,.91);rodShape.lineTo(.15,.91);rodShape.lineTo(.085,.34);rodShape.lineTo(.105,-.34);rodShape.lineTo(.17,-.91);rodShape.closePath();
+  const rodGeometry=new THREE.ExtrudeGeometry(rodShape,{depth:.14,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.025,bevelThickness:.025});
+  const rod=add(rodGeometry,M.steel,'Connecting rod','Motion');rod.position.set(x,-.55,-.08);rod.userData.baseScale=rod.scale.clone();
   const bearing=add(geo.cyl(.52,.38,24),M.dark,'Rod bearing','Motion');bearing.rotation.z=Math.PI/2;bearing.position.set(x,-1.48,0);
   const iv=add(geo.cyl(.13,.72,18),M.blue,'Intake valve','Valvetrain');iv.position.set(x-.48,2.03,.2);
   const ev=add(geo.cyl(.13,.72,18),M.red,'Exhaust valve','Valvetrain');ev.position.set(x+.48,2.03,.2);valveParts.push({mesh:iv,baseY:iv.position.y,type:'intake',phase:[0,360,360,0,240,120][i]||0});valveParts.push({mesh:ev,baseY:ev.position.y,type:'exhaust',phase:[0,360,360,0,240,120][i]||0});
@@ -127,6 +130,174 @@ function build(){
  const water=add(geo.cyl(.65,.35,28),M.blue,'Water pump','Cooling');water.rotation.z=Math.PI/2;water.position.set(-n*1.5,0,2.35);
  const starter=add(geo.cyl(.38,1.1,24),M.dark,'Starter motor','Starting');starter.rotation.z=Math.PI/2;starter.position.set(n*1.7,-.8,2.1);
  const alt=add(geo.cyl(.62,.42,32),M.alloy,'Alternator','Starting');alt.rotation.z=Math.PI/2;alt.position.set(-n*1.65,1.15,2.2);for(let i=0;i<10;i++){const fin=add(geo.box(.035,.42,.05,.01),M.dark,'Alternator','Starting',alt);fin.position.x=Math.cos(i*Math.PI/5)*.34;fin.position.y=Math.sin(i*Math.PI/5)*.34;fin.rotation.z=i*Math.PI/5;}
+
+ // Precision details: cast ribs, machined fasteners, ports, springs, gears and accessory hardware.
+ const bolt=(x,y,z,name='Cylinder head',system='Structure',radius=.075)=>{
+   const b=add(new THREE.CylinderGeometry(radius,radius,.075,8),M.steel,name,system);
+   b.position.set(x,y,z);b.rotation.y=Math.PI/8;
+   const slot=add(geo.box(radius*1.1,.012,.025,.002),M.dark,name,system);
+   slot.position.set(x,y+.039,z);
+   return b;
+ };
+ const pipe=(points,name,system,material,radius=.12)=>{
+   const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],p[1],p[2])));
+   return add(new THREE.TubeGeometry(curve,28,radius,10,false),material,name,system);
+ };
+ // Cast aluminium block ribs and machined side covers.
+ for(let y=-1.35;y<=1.25;y+=.52){
+   const rib=add(geo.box(n*2.34,.105,.12,.025),M.steel,'Engine block','Structure');
+   rib.position.set(0,y,2.43);
+   const rearRib=add(geo.box(n*2.34,.105,.12,.025),M.dark,'Engine block','Structure');
+   rearRib.position.set(0,y,-2.43);
+ }
+ const sideCover=add(geo.box(n*1.65,1.55,.09,.08),M.dark,'Engine block','Structure');
+ sideCover.position.set(0,-.05,2.51);
+ const sideInset=add(geo.box(n*1.48,1.34,.035,.04),M.alloy,'Engine block','Structure');
+ sideInset.position.set(0,-.05,2.565);
+ for(let i=0;i<Math.max(4,n*2);i++){
+   const x=(i-(Math.max(4,n*2)-1)/2)*.62;
+   for(const z of [-2.49,2.59]){
+     bolt(x,-1.55,z,'Engine block','Structure',.055);
+     bolt(x,1.43,z,'Engine block','Structure',.055);
+   }
+ }
+ // Head deck fasteners, valve-cover ribs and cap screws.
+ for(const x of xs){
+   for(const dx of [-.92,.92]) for(const z of [-1.8,1.8]) bolt(x+dx,3.31,z,'Cylinder head','Structure',.085);
+   for(const z of [-1.85,1.85]){
+     const coverBolt=bolt(x,3.94,z,'Valve cover','Structure',.065);
+     coverBolt.material=M.gold;
+   }
+ }
+ for(let i=0;i<Math.max(5,n+1);i++){
+   const x=(i-(Math.max(5,n+1)-1)/2)*1.05;
+   const ridge=add(geo.box(.1,.07,3.95,.025),M.steel,'Valve cover','Structure');
+   ridge.position.set(x,3.94,0);
+ }
+ // Air-cooled bike cylinder fins; on car engines the same visual detail is cast reinforcement.
+ if(state.engine==='bike'){
+   for(let y=1.9;y<=2.65;y+=.12){
+     const fin=add(geo.box(n*2.28,.045,5.02,.015),M.steel,'Cylinder head','Structure');
+     fin.position.set(0,y,0);
+   }
+ }
+ // Individual intake runners and exhaust primaries instead of plain manifold blocks alone.
+ for(const x of xs){
+   pipe([[x,2.75,.55],[x,2.9,1.1],[x,3.04,1.7],[x,3.08,2.28]],'Intake manifold','Air & fuel',M.alloy,.145);
+   pipe([[x,2.35,-.48],[x,2.27,-1.05],[x,2.35,-1.72],[x,2.35,-2.38]],'Exhaust manifold','Air & fuel',M.copper,.14);
+   // Flanges and clamp collars at each runner junction.
+   for(const z of [1.95,-1.95]){
+     const flange=add(geo.cyl(.22,.09,24),M.steel,z>0?'Intake manifold':'Exhaust manifold','Air & fuel');
+     flange.rotation.x=Math.PI/2;flange.position.set(x,z>0?3.06:2.35,z);
+   }
+ }
+ // Valve guides, retainers and visible coil springs for every intake/exhaust valve.
+ const springMat=new THREE.MeshStandardMaterial({color:0x9da5ad,metalness:.92,roughness:.24});
+ xs.forEach((x,i)=>{
+   for(const side of [-1,1]){
+     const vx=x+side*.48;
+     const guide=add(geo.cyl(.18,.3,24),M.gold,side<0?'Intake valve':'Exhaust valve','Valvetrain');
+     guide.position.set(vx,2.48,.2);
+     const retainer=add(geo.cyl(.2,.09,24),M.steel,side<0?'Intake valve':'Exhaust valve','Valvetrain');
+     retainer.position.set(vx,2.72,.2);
+     const pts=[];
+     for(let j=0;j<=72;j++){
+       const t=j/72,angle=t*Math.PI*12;
+       pts.push(new THREE.Vector3(vx+Math.cos(angle)*.145,2.08+t*.57,.2+Math.sin(angle)*.145));
+     }
+     const spring=add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),180,.022,6,false),springMat,side<0?'Intake valve':'Exhaust valve','Valvetrain');
+     spring.userData.springPhase=i*Math.PI;
+     const keeper=add(geo.cyl(.11,.07,12),M.dark,side<0?'Intake valve':'Exhaust valve','Valvetrain');
+     keeper.position.set(vx,2.77,.2);
+   }
+   // Spark plug ceramic, hex nut and ground electrode.
+   const ceramic=add(geo.cyl(.105,.24,20),M.white,'Spark plug','Ignition');
+   ceramic.position.set(x,2.91,.2);
+   const hex=add(new THREE.CylinderGeometry(.14,.14,.13,6),M.steel,'Spark plug','Ignition');
+   hex.position.set(x,2.78,.2);
+   const electrode=add(geo.cyl(.025,.12,12),M.gold,'Spark plug','Ignition');
+   electrode.position.set(x,2.57,.2);
+   // Machined connecting-rod big-end caps and exposed fasteners.
+   const cap=add(geo.tor(.29,.065),M.steel,'Rod bearing','Motion');
+   cap.rotation.x=Math.PI/2;cap.position.set(x,-1.48,.02);
+   for(const side of [-1,1]){
+     const nut=add(new THREE.CylinderGeometry(.075,.075,.1,6),M.gold,'Rod bearing','Motion');
+     nut.position.set(x+side*.28,-1.43,.16);
+   }
+ });
+ // Timing drive: toothed crank and cam sprockets, chain links and alignment marks.
+ for(const [x,y,r,label] of [[-n*1.45,1,0.58,'Timing chain / belt'],[-n*1.45,2.18,.42,'Timing chain / belt']]){
+   const gear=add(geo.cyl(r,.22,40),M.dark,label,'Timing');
+   gear.rotation.z=Math.PI/2;gear.position.set(x,y,-.15);
+   const hub=add(geo.cyl(r*.3,.28,24),M.gold,label,'Timing');
+   hub.rotation.z=Math.PI/2;hub.position.set(x,y,-.15);
+   for(let t=0;t<24;t++){
+     const a=t*Math.PI/12;
+     const tooth=add(geo.box(.13,.12,.2,.02),M.steel,label,'Timing');
+     tooth.position.set(x+Math.cos(a)*(r+.025),y+Math.sin(a)*(r+.025),-.15);
+     tooth.rotation.z=a;
+   }
+ }
+ for(let i=0;i<36;i++){
+   const a=i*Math.PI/18;
+   const link=add(geo.box(.11,.055,.045,.012),i%2?M.steel:M.dark,'Timing chain / belt','Timing');
+   link.position.set(-n*1.45+Math.cos(a)*.96,1.58+Math.sin(a)*.96,-.08);
+   link.rotation.z=a+Math.PI/2;
+ }
+ const timingMark=add(geo.box(.045,.22,.025,.008),M.gold,'Timing chain / belt','Timing');
+ timingMark.position.set(-n*1.45+.58,1,-.28);
+ // Accessory drive: detailed pulley grooves, spokes and belt path.
+ for(const [x,y,r] of [[-n*1.65,1.15,.62],[-n*1.5,0,.48],[n*1.7,-.8,.35]]){
+   for(let k=0;k<4;k++){
+     const groove=add(geo.tor(r-k*.075,.027),M.dark,'Accessory belt','Starting');
+     groove.position.set(x,y,2.22-k*.035);
+   }
+   const hub=add(geo.cyl(r*.24,.5,28),M.gold,'Accessory belt','Starting');
+   hub.rotation.x=Math.PI/2;hub.position.set(x,y,2.22);
+   for(let k=0;k<6;k++){
+     const a=k*Math.PI/3;
+     const spoke=add(geo.box(r*.72,.065,.08,.018),M.steel,'Accessory belt','Starting');
+     spoke.position.set(x+Math.cos(a)*r*.48,y+Math.sin(a)*r*.48,2.22);
+     spoke.rotation.z=a;
+   }
+ }
+ // Realistic turbocharger compressor wheel with swept, individually visible blades.
+ const turboX=n*1.7,turboY=1.7,turboZ=-3;
+ const turboRim=add(geo.tor(.72,.075),M.dark,'Turbocharger','Air & fuel');
+ turboRim.rotation.x=Math.PI/2;turboRim.position.set(turboX,turboY,turboZ-.24);
+ for(let i=0;i<12;i++){
+   const a=i*Math.PI/6;
+   const blade=add(geo.box(.16,.48,.055,.025),i%2?M.steel:M.alloy,'Turbocharger','Air & fuel');
+   blade.position.set(turboX+Math.cos(a)*.34,turboY+Math.sin(a)*.34,turboZ-.29);
+   blade.rotation.z=a+.45;
+ }
+ const turboNut=add(new THREE.CylinderGeometry(.16,.16,.12,6),M.gold,'Turbocharger','Air & fuel');
+ turboNut.rotation.x=Math.PI/2;turboNut.position.set(turboX,turboY,turboZ-.34);
+ // Oil galleries and coolant hose runs bring detail to the front accessories.
+ pipe([[-n*1.45,.15,2.48],[-n*1.25,.35,2.78],[-n*1.1,.1,2.8],[-n*.9,-.35,2.5]],'Water pump','Cooling',M.blue,.09);
+ pipe([[n*1.2,-.55,2.48],[n*1.4,-.3,2.8],[n*1.55,-.6,2.82],[n*1.65,-.8,2.48]],'Oil filter','Lubrication',M.black,.085);
+ // Gearbox cutaway cluster: stacked gears with tooth detail, bearing races and shafts.
+ const gearOriginX=n*1.55,gearOriginY=-1.55,gearOriginZ=-2.72;
+ for(const [idx,r] of [[0,.62],[1,.42],[2,.29]]){
+   const gx=gearOriginX+idx*.72,gy=gearOriginY+(idx%2)*.18;
+   const gear=add(geo.cyl(r,.22,36),idx===1?M.gold:M.steel,'Gearbox','Transmission');
+   gear.rotation.x=Math.PI/2;gear.position.set(gx,gy,gearOriginZ);
+   const hub=add(geo.cyl(r*.24,.32,20),M.dark,'Gearbox','Transmission');
+   hub.rotation.x=Math.PI/2;hub.position.set(gx,gy,gearOriginZ);
+   for(let t=0;t<24;t++){
+     const a=t*Math.PI/12;
+     const tooth=add(geo.box(.12,.12,.2,.015),M.steel,'Gearbox','Transmission');
+     tooth.position.set(gx+Math.cos(a)*(r+.025),gy+Math.sin(a)*(r+.025),gearOriginZ);
+     tooth.rotation.z=a;
+   }
+ }
+ const gearCase=add(geo.box(3.2,1.35,.22,.12),M.dark,'Gearbox','Transmission');
+ gearCase.position.set(gearOriginX+.55,gearOriginY-.15,gearOriginZ-.24);
+ for(let i=0;i<8;i++){
+   const x=gearOriginX-.75+(i%4)*.85,y=gearOriginY-.62+Math.floor(i/4)*.9;
+   bolt(x,y,gearOriginZ-.37,'Gearbox','Transmission',.055);
+ }
+
  updateVisibility();select(state.selected,false)
 }
 function updateVisibility(){
