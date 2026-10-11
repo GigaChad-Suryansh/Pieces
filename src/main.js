@@ -112,7 +112,7 @@ function build(){
   moving.push({piston,rod,phase:[0,Math.PI,Math.PI,0,Math.PI*2/3,Math.PI/3][i]||0});
  });
  const crank=add(geo.cyl(.31,n*3.15,32),M.dark,'Crankshaft','Motion');crank.rotation.z=Math.PI/2;crank.position.y=-1.48;crankParts.push(crank);
- xs.forEach((x)=>{const w=add(geo.cyl(.68,.32,28),M.steel,'Crankshaft','Motion');w.rotation.z=Math.PI/2;w.position.set(x,-1.48,0);crankParts.push(w);const throwArm=add(geo.box(.38,1.05,.48,.08),M.steel,'Crankshaft','Motion');throwArm.position.set(x,-1.15,0);throwArm.userData.crankThrow=true;crankParts.push(throwArm)});
+ xs.forEach((x,i)=>{const w=add(geo.cyl(.68,.32,28),M.steel,'Crankshaft','Motion');w.rotation.z=Math.PI/2;w.position.set(x,-1.48,0);crankParts.push(w);const throwArm=add(geo.box(.38,1.05,.48,.08),M.steel,'Crankshaft','Motion');throwArm.position.set(x,-1.15,0);throwArm.userData.crankThrow=true;throwArm.userData.phase=[0,Math.PI,Math.PI,0,Math.PI*2/3,Math.PI/3][i]||0;crankParts.push(throwArm)});
  const main=add(geo.cyl(.47,n*3.05,28),M.gold,'Main bearing','Motion');main.rotation.z=Math.PI/2;main.position.y=-1.48;main.scale.z=.7;crankParts.push(main);
  const fly=add(geo.cyl(1.62,.38,48),M.dark,'Flywheel / flexplate','Motion');fly.rotation.z=Math.PI/2;fly.position.set(n*1.7,-1.48,0);crankParts.push(fly);
  const camAssembly=new THREE.Group();camAssembly.position.set(0,3,.75);root.add(camAssembly);const cam=add(geo.cyl(.24,n*3,24),M.dark,'Camshaft','Valvetrain',camAssembly);cam.rotation.z=Math.PI/2;camParts.push(camAssembly);
@@ -157,9 +157,9 @@ function loop(now){
  const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;
  if(state.running){physics.throttle=state.throttle/100;physics.load=state.load/100;const snap=physics.step(dt);state.rpm=snap.rpm;state.cycle=snap.theta;}else{physics.theta=state.cycle;physics.rpm=state.rpm;}
  const crankRad=state.cycle*Math.PI/180;
- crankParts.forEach(o=>{if(o.userData.crankThrow){o.position.y=-1.48+Math.cos(crankRad)*.72;o.position.z=Math.sin(crankRad)*.72;o.rotation.x=crankRad;}else if(o.userData.part==='Crankshaft'||o.userData.part==='Flywheel / flexplate'){o.rotation.x=crankRad;}});
+ crankParts.forEach(o=>{if(o.userData.crankThrow){const a=crankRad+(o.userData.phase||0);o.position.y=-1.48+Math.cos(a)*.72;o.position.z=Math.sin(a)*.72;o.rotation.x=a;}else if(o.userData.part==='Crankshaft'||o.userData.part==='Flywheel / flexplate'){o.rotation.x=crankRad;}});
  camParts.forEach(o=>{o.rotation.x=crankRad/2;});
- moving.forEach(m=>{const a=crankRad+m.phase,y=.05+Math.cos(a)*.82;const crankX=Math.sin(a)*.72,crankY=-1.48+Math.cos(a)*.72,dy=crankY-y;m.piston.position.y=y;m.rod.position.set(m.piston.position.x,(y+crankY)/2,.02);m.rod.rotation.z=Math.atan2(-crankX,dy);m.rod.scale.y=Math.max(.65,Math.hypot(crankX,dy)/2);});
+ moving.forEach(m=>{const a=crankRad+m.phase,y=.05+Math.cos(a)*.82;const crankZ=Math.sin(a)*.72,crankY=-1.48+Math.cos(a)*.72,dy=crankY-y;m.piston.position.y=y;m.rod.position.set(m.piston.position.x,(y+crankY)/2,crankZ/2);m.rod.rotation.x=Math.atan2(-crankZ,dy);m.rod.scale.y=Math.max(.65,Math.hypot(crankZ,dy)/2);});
  valveParts.forEach(v=>{const deg=(state.cycle+v.phase)%720;const lift=physics.valveLift(deg,v.type);v.mesh.position.y=v.baseY-lift*.32;});
  explode();
  if(controls){if(focusAnimating){controls.target.lerp(focusTarget,.12);camera.position.lerp(focusCamera,.08);if(camera.position.distanceTo(focusCamera)<.08&&controls.target.distanceTo(focusTarget)<.08)focusAnimating=false;}controls.update();}
