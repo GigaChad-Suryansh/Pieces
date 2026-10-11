@@ -1,4 +1,4 @@
-name: Deploy Engine Atlas
+name: Deploy Pieces Engineverse
 
 on:
   push:
