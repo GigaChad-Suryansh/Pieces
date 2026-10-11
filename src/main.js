@@ -67,6 +67,8 @@ const info=Object.fromEntries(catalog.map(x=>[x[1],{system:x[0],desc:x[2]}]));
 const state={engine:'i4',selected:'Piston',system:'All',search:'',explode:false,cutaway:false,isolate:false,running:false,rpm:900,cycle:0,throttle:18,load:25};
 let plotClock=0;const history={rpm:[],torque:[],temp:[]};let animationLoopStarted=false,resizeHandlerBound=false;
 let physics=new EnginePhysics(state.engine);
+const combustion=[];
+const dyno={running:false,elapsed:0,lastSample:0,points:[],peakTorque:0,peakPower:0};
 let scene,camera,renderer,controls,raycaster,mouse,root,parts=[],moving=[],crankParts=[],camParts=[],valveParts=[],last=performance.now(),focusTarget=new THREE.Vector3(0,.7,0),focusCamera=new THREE.Vector3(10,6.5,13),focusAnimating=false;
 
 document.querySelector('#app').innerHTML=`
@@ -94,7 +96,7 @@ function init3D(){
  }
 }
 function build(){
- root=new THREE.Group();scene.add(root);parts=[];moving=[];crankParts=[];camParts=[];valveParts=[];const E=engines[state.engine],n=E.cyl,s=3,xs=Array.from({length:n},(_,i)=>(i-(n-1)/2)*s);
+ root=new THREE.Group();scene.add(root);parts=[];moving=[];crankParts=[];camParts=[];valveParts=[];combustion.length=0;const E=engines[state.engine],n=E.cyl,s=3,xs=Array.from({length:n},(_,i)=>(i-(n-1)/2)*s);
  const block=add(geo.box(n*2.55,3.8,4.8,.2),M.alloy,'Engine block','Structure');const pan=add(geo.box(n*2.7,1.05,4.95,.18),M.black,'Oil pan / sump','Structure');pan.position.y=-2.35;
  const head=add(geo.box(n*2.48,1.5,4.65,.18),M.alloy,'Cylinder head','Structure');head.position.y=2.55;
  const cover=add(geo.box(n*2.42,.55,4.5,.14),M.dark,'Valve cover','Structure');cover.position.y=3.62;
@@ -112,6 +114,12 @@ function build(){
   const iv=add(geo.cyl(.13,.72,18),M.blue,'Intake valve','Valvetrain');iv.position.set(x-.48,2.03,.2);
   const ev=add(geo.cyl(.13,.72,18),M.red,'Exhaust valve','Valvetrain');ev.position.set(x+.48,2.03,.2);valveParts.push({mesh:iv,baseY:iv.position.y,type:'intake',phase:[0,360,360,0,240,120][i]||0});valveParts.push({mesh:ev,baseY:ev.position.y,type:'exhaust',phase:[0,360,360,0,240,120][i]||0});
   const plug=add(geo.cyl(.09,.5,16),M.gold,'Spark plug','Ignition');plug.position.set(x,2.83,.2);
+  // Transparent combustion volume sits in the chamber and lights only around the power stroke.
+  const flameMat=new THREE.MeshBasicMaterial({color:0xff8a26,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
+  const flame=new THREE.Mesh(new THREE.IcosahedronGeometry(.43,2),flameMat);flame.position.set(x,1.42,.15);flame.scale.set(.82,.45,.82);root.add(flame);
+  const coreMat=new THREE.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
+  const flameCore=new THREE.Mesh(new THREE.IcosahedronGeometry(.22,1),coreMat);flameCore.position.copy(flame.position);root.add(flameCore);
+  combustion.push({flame,flameCore,phase:[0,360,360,0,240,120][i]||0});
   moving.push({piston,rod,phase:[0,Math.PI,Math.PI,0,Math.PI*2/3,Math.PI/3][i]||0});
  });
  const crank=add(geo.cyl(.31,n*3.15,32),M.dark,'Crankshaft','Motion');crank.rotation.z=Math.PI/2;crank.position.y=-1.48;crankParts.push(crank);
@@ -330,7 +338,43 @@ function loop(now){
  const crankRad=state.cycle*Math.PI/180;
  crankParts.forEach(o=>{if(o.userData.crankThrow){const a=crankRad+(o.userData.phase||0);o.position.y=-1.48+Math.cos(a)*.72;o.position.z=Math.sin(a)*.72;o.rotation.x=a;}else if(o.userData.part==='Crankshaft'||o.userData.part==='Flywheel / flexplate'){o.rotation.x=crankRad;}});
  camParts.forEach(o=>{o.rotation.x=crankRad/2;});
- moving.forEach(m=>{const a=crankRad+m.phase,y=.05+Math.cos(a)*.82;const crankZ=Math.sin(a)*.72,crankY=-1.48+Math.cos(a)*.72,dy=crankY-y;m.piston.position.y=y;m.rod.position.set(m.piston.position.x,(y+crankY)/2,crankZ/2);m.rod.rotation.x=Math.atan2(-crankZ,dy);m.rod.scale.y=Math.max(.65,Math.hypot(crankZ,dy)/2);});
+ moving.forEach(m=>{
+  // Match visual piston travel to the slider-crank kinematics used by the physics model.
+  const a=crankRad+m.phase;
+  const normalized=physics.pistonPosition(a)/Math.max(.001,physics.spec.stroke);
+  const y=.87-normalized*1.64;
+  const crankZ=Math.sin(a)*.72,crankY=-1.48+Math.cos(a)*.72,dy=crankY-y;
+  m.piston.position.y=y;
+  m.rod.position.set(m.piston.position.x,(y+crankY)/2,crankZ/2);
+  m.rod.rotation.x=Math.atan2(-crankZ,dy);
+  m.rod.scale.y=Math.max(.35,Math.hypot(crankZ,dy)/1.82);
+});
+combustion.forEach(c=>{
+  const deg=((state.cycle+c.phase)%720+720)%720;
+  const ignition=state.engine==='diesel'?350:360-(physics.sparkAdvance||12);
+  const rise=Math.max(0,Math.min(1,(deg-ignition)/18));
+  const fall=Math.max(0,Math.min(1,(ignition+118-deg)/62));
+  const pulse=deg>=ignition&&deg<=ignition+118?Math.sin(Math.PI*rise/2)*fall:0;
+  const strength=Math.max(0,Math.min(1,pulse))*Math.max(.12,state.throttle/100);
+  c.flame.material.opacity=strength*.72;
+  c.flame.scale.set(.55+strength*.6,.28+strength*.9,.55+strength*.6);
+  c.flameCore.material.opacity=strength*.9;
+  c.flameCore.scale.setScalar(.35+strength*.9);
+});
+if(dyno.running){
+  dyno.elapsed+=dt;dyno.lastSample+=dt;
+  if(dyno.lastSample>=.12){
+    dyno.lastSample=0;
+    const rpm=Math.round(physics.rpm/100)*100,prev=dyno.points[dyno.points.length-1];
+    if(!prev||rpm>prev.rpm+70){
+      const torque=Math.max(0,physics.torque),power=torque*rpm*2*Math.PI/60/1000;
+      dyno.points.push({rpm,torque,power});
+      dyno.peakTorque=Math.max(dyno.peakTorque,torque);dyno.peakPower=Math.max(dyno.peakPower,power);
+      drawDyno();
+    }
+  }
+  if(physics.rpm>=physics.spec.redline-30||dyno.elapsed>22){dyno.running=false;const btn=document.querySelector('#dynoStart');if(btn)btn.textContent='▶ RUN DYNO PULL';requestRenderMeta();drawDyno();}
+}
  valveParts.forEach(v=>{const deg=(state.cycle+v.phase)%720;const lift=physics.valveLift(deg,v.type);v.mesh.position.y=v.baseY-lift*.32;});
  explode();
  if(controls){if(focusAnimating){controls.target.lerp(focusTarget,.12);camera.position.lerp(focusCamera,.08);if(camera.position.distanceTo(focusCamera)<.08&&controls.target.distanceTo(focusTarget)<.08)focusAnimating=false;}controls.update();}
@@ -339,6 +383,24 @@ function loop(now){
 function requestRenderMeta(){const phase=document.querySelector('#cyclePhase');if(phase){const a=((state.cycle%720)+720)%720;phase.textContent=a<180?'INTAKE':a<360?'COMPRESSION':a<540?'POWER':'EXHAUST';}const status=document.querySelector('#engineStatus');if(status)status.textContent=state.running?'ENGINE RUNNING · LIVE PHYSICS':'SIMULATION READY · 4-STROKE';const play=document.querySelector('#play');if(play){play.textContent=state.running?'Ⅱ':'▶';play.setAttribute('aria-label',state.running?'Pause engine':'Start engine');}const deg=document.querySelector('#cycleDeg');if(deg)deg.textContent=Math.round(state.cycle)+'°';const bar=document.querySelector('#cycleBar');if(bar)bar.style.width=state.cycle/7.2+'%';const set=(id,v)=>{const e=document.querySelector(id);if(e)e.textContent=v};set('#teleRPM',Math.round(physics.rpm));set('#teleTorque',Math.round(physics.torque)+' Nm');set('#telePower',physics.power.toFixed(1)+' kW');set('#telePressure',physics.pressure.toFixed(1)+' bar');set('#teleBoost',(physics.boost||0).toFixed(2)+' bar');set('#teleTemp',Math.round(physics.temperature)+'°C');set('#teleOil',Math.round(physics.oil||95)+'°C');set('#teleExhaust',Math.round(physics.exhaustTemp||280)+'°C');set('#teleEff',(physics.efficiency||0).toFixed(1)+'%');set('#teleKnock',(physics.knock||0).toFixed(1)+'%');set('#readIMEP',(physics.imep||0).toFixed(1)+' bar');set('#readBMEP',(physics.bmep||0).toFixed(1)+' bar');set('#readAFR',physics.spec.afr.toFixed(1));set('#readFlow',(physics.intakeFlow||0).toFixed(1)+' g/s')}
 
 function drawChart(id,values,maxValue,label,color='#48e6ff'){const cv=document.querySelector('#'+id);if(!cv||!values?.length)return;const d=Math.min(window.devicePixelRatio||1,2),w=Math.max(cv.clientWidth,300),h=Math.max(cv.clientHeight,145);cv.width=Math.round(w*d);cv.height=Math.round(h*d);const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);x.font='10px DM Sans,Arial';x.fillStyle='rgba(157,169,198,.75)';for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,i*h/4);x.lineTo(w,i*h/4);x.strokeStyle='rgba(157,169,198,.12)';x.lineWidth=1;x.stroke()}const pts=values.map((v,i)=>[i/(values.length-1||1)*w,h-10-(Math.max(0,Math.min(v,maxValue))/Math.max(maxValue,1))*(h-22)]);x.beginPath();pts.forEach(([px,py],i)=>i?x.lineTo(px,py):x.moveTo(px,py));x.lineTo(w,h-10);x.lineTo(0,h-10);x.closePath();const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,color+'55');g.addColorStop(1,color+'00');x.fillStyle=g;x.fill();x.beginPath();pts.forEach(([px,py],i)=>i?x.lineTo(px,py):x.moveTo(px,py));x.strokeStyle=color;x.lineWidth=2.5;x.lineJoin='round';x.lineCap='round';x.stroke();x.fillStyle=color;x.fillText(label,8,14)}
+function drawDyno(){
+ const cv=document.querySelector('#dynoPlot');if(!cv)return;
+ const d=Math.min(window.devicePixelRatio||1,2),w=Math.max(cv.clientWidth,320),h=Math.max(cv.clientHeight,180);
+ cv.width=Math.round(w*d);cv.height=Math.round(h*d);const c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);
+ c.fillStyle='rgba(9,15,29,.35)';c.fillRect(0,0,w,h);c.font='10px DM Sans,Arial';c.fillStyle='rgba(157,169,198,.8)';
+ for(let i=1;i<5;i++){const y=i*h/5;c.beginPath();c.moveTo(32,y);c.lineTo(w-12,y);c.strokeStyle='rgba(157,169,198,.14)';c.stroke();}
+ for(let i=1;i<5;i++){const x=32+i*(w-44)/5;c.beginPath();c.moveTo(x,8);c.lineTo(x,h-22);c.strokeStyle='rgba(157,169,198,.09)';c.stroke();}
+ const maxRpm=physics.spec.redline,maxT=Math.max(30,...dyno.points.map(p=>p.torque))*1.15,maxP=Math.max(10,...dyno.points.map(p=>p.power))*1.15;
+ const draw=(key,max,color)=>{if(dyno.points.length<2)return;c.beginPath();dyno.points.forEach((p,i)=>{const x=32+(p.rpm/maxRpm)*(w-44),y=h-22-(p[key]/max)*(h-34);i?c.lineTo(x,y):c.moveTo(x,y)});c.strokeStyle=color;c.lineWidth=2.5;c.lineJoin='round';c.stroke();};
+ draw('torque',maxT,'#48e6ff');draw('power',maxP,'#ffad5a');
+ c.fillStyle='#48e6ff';c.fillText('TORQUE',36,14);c.fillStyle='#ffad5a';c.fillText('POWER',104,14);
+ c.fillStyle='rgba(157,169,198,.8)';c.fillText('0',18,h-9);c.fillText(Math.round(maxRpm),w-50,h-9);
+ const set=(id,v)=>{const e=document.querySelector(id);if(e)e.textContent=v};
+ set('#dynoPeakTorque',dyno.points.length?dyno.peakTorque.toFixed(1)+' Nm':'— Nm');
+ set('#dynoPeakPower',dyno.points.length?dyno.peakPower.toFixed(1)+' kW':'— kW');
+ set('#dynoLiveRpm',Math.round(physics.rpm).toLocaleString());
+ set('#dynoStatus',dyno.running?'PULL IN PROGRESS':dyno.points.length?'Pull complete · modelled data':'Ready for a pull');
+}
 function drawInstrumentation(){if(!physics)return;const pressure=[],torque=[],piston=[];for(let a=0;a<=720;a+=30){pressure.push(physics.cylinderPressure(a,physics.throttle)/1e5);const q=physics.cylinderWorkTorque(a);torque.push(Math.max(0,q.torque));piston.push(physics.pistonPosition(a*Math.PI/180)*1000)}drawChart('pressurePlot',pressure,Math.max(20,...pressure),'bar','#48e6ff');drawChart('torquePlot',torque,Math.max(20,...torque),'Nm','#ffad5a');drawChart('pistonPlot',piston,Math.max(90,...piston),'mm','#9b7cff');history.rpm.push(physics.rpm);history.torque.push(physics.torque);history.temp.push(physics.temperature);[history.rpm,history.torque,history.temp].forEach(a=>{if(a.length>80)a.shift()});const cv=document.querySelector('#trendPlot');if(cv){const w=cv.clientWidth||500,h=cv.clientHeight||150,d=Math.min(devicePixelRatio||1,2);cv.width=Math.round(w*d);cv.height=Math.round(h*d);const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);const draw=(arr,max)=>{x.beginPath();arr.forEach((v,i)=>{const px=i/(79)*w,py=h-6-Math.max(0,Math.min(v/max,1))*(h-12);i?x.lineTo(px,py):x.moveTo(px,py)});x.strokeStyle='#30332f';x.lineWidth=2;x.stroke()};draw(history.rpm,physics.spec.redline);draw(history.temp,180)}const set=(id,v)=>{const e=document.querySelector(id.startsWith('#')?id:'#'+id);if(e)e.textContent=v};set('#readIMEP',(physics.imep||0).toFixed(1)+' bar');set('#readBMEP',(physics.bmep||0).toFixed(1)+' bar');set('#readAFR',physics.spec.afr.toFixed(1));set('#readFlow',(physics.intakeFlow||0).toFixed(1)+' g/s')}
 function renderLibrary(){
  const systems=['All',...new Set(catalog.map(x=>x[0]))],q=state.search.toLowerCase();
@@ -350,6 +412,12 @@ function renderLibrary(){
  <section class="viewer panel"><div class="viewerHead"><div><span class="eyebrow">LIVE 3D ASSEMBLY</span><h2>${engines[state.engine].name}</h2><small>Orbit · zoom · click any component</small></div><div class="actions"><button data-view="front">FRONT</button><button data-view="side">SIDE</button><button data-view="top">TOP</button><button id="explodeBtn">${state.explode?'ASSEMBLE':'EXPLODE'}</button><button id="cutBtn">${state.cutaway?'SOLID':'CUTAWAY'}</button><button id="isoBtn">${state.isolate?'SHOW ALL':'ISOLATE'}</button><button id="reset">RESET</button></div></div>
  <div id="viewport" class="viewport"><div class="hud"><b>PIECES // ENGINE LAB</b><span id="engineStatus">SIMULATION READY · 4-STROKE</span></div><div class="simPresets"><span>DRIVE MODE</span><button data-preset="idle">IDLE</button><button data-preset="road">ROAD</button><button data-preset="power">POWER</button></div><div class="telemetry"><div><span>RPM</span><b id="teleRPM">${Math.round(state.rpm)}</b></div><div><span>TORQUE</span><b id="teleTorque">0 Nm</b></div><div><span>POWER</span><b id="telePower">0 kW</b></div><div><span>CYL. PRESSURE</span><b id="telePressure">1 bar</b></div><div><span>BOOST</span><b id="teleBoost">0.00 bar</b></div><div><span>COOLANT</span><b id="teleTemp">90°C</b></div><div><span>OIL</span><b id="teleOil">95°C</b></div><div><span>EXHAUST</span><b id="teleExhaust">280°C</b></div><div><span>EFFICIENCY</span><b id="teleEff">0%</b></div><div><span>KNOCK</span><b id="teleKnock">0%</b></div></div><div class="cycle"><span>4-STROKE CYCLE</span><small id="cyclePhase">INTAKE</small><b id="cycleDeg">${Math.round(state.cycle)}°</b><div class="cycleBar"><i id="cycleBar" style="width:${state.cycle/7.2}%"></i></div><button id="play" aria-label="${state.running?'Pause engine':'Start engine'}">${state.running?'Ⅱ':'▶'}</button></div><div class="physicsControls"><label>THROTTLE <input id="throttle" type="range" min="0" max="100" value="${state.throttle}"><b id="throttleVal">${state.throttle}%</b></label><label>LOAD <input id="load" type="range" min="0" max="100" value="${state.load}"><b id="loadVal">${state.load}%</b></label><label>IGNITION <input id="advance" type="range" min="0" max="35" value="${physics.sparkAdvance||12}"><b id="advanceVal">${physics.sparkAdvance||12}°</b></label></div></div>
  <div id="detail" class="detail"></div></section></div><div class="instrumentation panel"><div class="panelTitle"><div><span class="eyebrow">LIVE INSTRUMENTATION</span><h2>Engine traces</h2></div><span class="subtle">Reduced-order physics · 0–720° cycle</span></div><div class="plotGrid"><article class="plotCard"><div><b>CYLINDER PRESSURE</b><small>bar vs crank angle</small></div><canvas id="pressurePlot"></canvas></article><article class="plotCard"><div><b>TORQUE PULSE</b><small>Nm vs crank angle</small></div><canvas id="torquePlot"></canvas></article><article class="plotCard"><div><b>PISTON MOTION</b><small>position vs crank angle</small></div><canvas id="pistonPlot"></canvas></article><article class="plotCard"><div><b>LIVE TREND</b><small>RPM / temperature</small></div><canvas id="trendPlot"></canvas></article></div><div class="physicsReadout"><span>IMEP <b id="readIMEP">0 bar</b></span><span>BMEP <b id="readBMEP">0 bar</b></span><span>AFR <b id="readAFR">14.7</b></span><span>INTAKE FLOW <b id="readFlow">0 g/s</b></span></div></div>
+ <section class="dyno panel"><div class="panelTitle"><div><span class="eyebrow">CHASSIS DYNO · MODELLED SWEEP</span><h2>Power & torque curve</h2></div><span id="dynoStatus" class="subtle">Ready for a pull</span></div>
+ <div class="dynoLayout"><div class="dynoPlotWrap"><canvas id="dynoPlot"></canvas><div class="dynoAxis"><span>LOW RPM</span><span>ENGINE SPEED →</span><span>REDLINE</span></div></div>
+ <div class="dynoSide"><div class="dynoMetrics"><div><span>PEAK TORQUE</span><b id="dynoPeakTorque">— <small>Nm</small></b></div><div><span>PEAK POWER</span><b id="dynoPeakPower">— <small>kW</small></b></div><div><span>LIVE RPM</span><b id="dynoLiveRpm">900</b></div></div>
+ <label class="dynoLoadLabel">DYNO BRAKE LOAD <input id="dynoLoad" type="range" min="5" max="85" value="20"><b id="dynoLoadValue">20%</b></label>
+ <div class="dynoButtons"><button id="dynoStart">▶ RUN DYNO PULL</button><button id="dynoClear">CLEAR TRACE</button></div>
+ <p class="dynoNote">Educational reduced-order model, not a calibrated real-world dynamometer. Hold load steady and compare engine configurations.</p></div></div></section>
  <section class="catalog panel"><div class="panelTitle"><div><span class="eyebrow">COMPONENT CATALOGUE</span><h2>${list.length} parts in view</h2></div><span class="subtle">Click a part to inspect it</span></div><div class="partsGrid">${list.map((x,i)=>`<button class="partRow ${x[1]===state.selected?'selected':''}" data-part="${x[1]}"><span class="num">${String(i+1).padStart(2,'0')}</span><span><b>${x[1]}</b><small>${x[2]}</small></span><em>${x[0]}</em></button>`).join('')}</div></section>`;
  bindLibrary();init3D()
 }
@@ -371,6 +439,14 @@ function bindLibrary(){
  document.querySelector('#isoBtn').onclick=()=>{state.isolate=!state.isolate;document.querySelector('#isoBtn').textContent=state.isolate?'SHOW ALL':'ISOLATE';document.querySelector('#isoBtn').classList.toggle('active',state.isolate);updateVisibility()};
  document.querySelector('#reset').onclick=()=>{state.explode=false;state.cutaway=false;state.isolate=false;state.cycle=0;state.running=false;state.throttle=18;state.load=25;state.rpm=900;physics.reset();physics.throttle=.18;physics.load=.25;physics.rpm=900;focusTarget.set(0,.7,0);focusCamera.set(10,6.5,13);focusAnimating=false;controls.reset();updateVisibility();select(state.selected,false);requestRenderMeta();document.querySelector('#throttle').value=18;document.querySelector('#load').value=25;document.querySelector('#throttleVal').textContent='18%';document.querySelector('#loadVal').textContent='25%';physics.sparkAdvance=12;document.querySelector('#advance').value=12;document.querySelector('#advanceVal').textContent='12°'};
  document.querySelector('#play').onclick=()=>{state.running=!state.running;requestRenderMeta();};
+ document.querySelector('#dynoLoad').oninput=e=>{state.load=+e.target.value;physics.load=state.load/100;document.querySelector('#dynoLoadValue').textContent=state.load+'%';document.querySelector('#load').value=state.load;document.querySelector('#loadVal').textContent=state.load+'%';};
+ document.querySelector('#dynoStart').onclick=()=>{
+   dyno.running=!dyno.running;
+   if(dyno.running){dyno.points=[];dyno.peakTorque=0;dyno.peakPower=0;dyno.elapsed=0;dyno.lastSample=0;state.running=true;state.throttle=100;state.load=+document.querySelector('#dynoLoad').value;physics.throttle=1;physics.load=state.load/100;document.querySelector('#throttle').value=100;document.querySelector('#throttleVal').textContent='100%';document.querySelector('#load').value=state.load;document.querySelector('#loadVal').textContent=state.load+'%';document.querySelector('#dynoStart').textContent='Ⅱ STOP DYNO PULL';}
+   else{document.querySelector('#dynoStart').textContent='▶ RUN DYNO PULL';}
+   requestRenderMeta();drawDyno();
+ };
+ document.querySelector('#dynoClear').onclick=()=>{dyno.running=false;dyno.points=[];dyno.peakTorque=0;dyno.peakPower=0;document.querySelector('#dynoStart').textContent='▶ RUN DYNO PULL';drawDyno();};
  document.querySelector('#throttle').oninput=e=>{state.throttle=+e.target.value;physics.throttle=state.throttle/100;document.querySelector('#throttleVal').textContent=state.throttle+'%'};document.querySelector('#load').oninput=e=>{state.load=+e.target.value;physics.load=state.load/100;document.querySelector('#loadVal').textContent=state.load+'%'};document.querySelector('#advance').oninput=e=>{physics.sparkAdvance=+e.target.value;document.querySelector('#advanceVal').textContent=physics.sparkAdvance+'°'};
  document.querySelector('#clear').onclick=()=>{state.system='All';state.search='';document.querySelector('#search').value='';document.querySelectorAll('[data-system]').forEach(x=>x.classList.toggle('active',x.dataset.system==='All'));updateVisibility();refreshCatalog()}
 }
