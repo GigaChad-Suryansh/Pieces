@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {EnginePhysics} from './physics.js';
 import {setupQuiz} from './quiz.js';
+import {buildEngine} from './engine3d/build.js';
+import {ENGINES} from './data/engines.js';
+import {createEnvironment,createStudio} from './engine3d/studio.js';
 
 const engines={
  i4:{name:'2.0L Inline-4',sub:'Petrol · DOHC · 16 valves',cyl:4,bore:1.75,stroke:2.05},
@@ -64,12 +67,12 @@ const catalog=[
 ['Starting','Alternator','Generates electrical power and maintains the vehicle battery.']
 ];
 const info=Object.fromEntries(catalog.map(x=>[x[1],{system:x[0],desc:x[2]}]));
-const state={engine:'i4',selected:'Piston',system:'All',search:'',explode:false,cutaway:false,isolate:false,running:false,rpm:900,cycle:0,throttle:18,load:25};
+const state={engine:'i4',selected:'Piston',system:'All',search:'',explode:false,cutaway:false,isolate:false,running:false,xray:false,rpm:900,cycle:0,throttle:18,load:25};
 let plotClock=0;const history={rpm:[],torque:[],temp:[]};let animationLoopStarted=false,resizeHandlerBound=false;
 let physics=new EnginePhysics(state.engine);
 const combustion=[];
 const dyno={running:false,elapsed:0,lastSample:0,points:[],peakTorque:0,peakPower:0};
-let scene,camera,renderer,controls,raycaster,mouse,root,parts=[],moving=[],crankParts=[],camParts=[],valveParts=[],last=performance.now(),focusTarget=new THREE.Vector3(0,.7,0),focusCamera=new THREE.Vector3(10,6.5,13),focusAnimating=false;
+let scene,camera,renderer,controls,raycaster,mouse,eng,parts=[],last=performance.now(),focusTarget=new THREE.Vector3(0,6,0),focusCamera=new THREE.Vector3(30,18,46),focusAnimating=false;const home={target:new THREE.Vector3(),cam:new THREE.Vector3()};
 
 document.querySelector('#app').innerHTML=`
 <header class="topbar"><div class="brand">PIECES <span>ENGINEVERSE</span></div><div class="search"><span>⌕</span><input id="search" placeholder="Search parts, systems, engines…"></div><nav><button class="nav active" data-tab="library">Library</button><button class="nav" data-tab="learn">Learn</button><button class="nav" data-tab="compare">Compare</button></nav><kbd>K</kbd><div class="avatar">S</div></header>
@@ -81,13 +84,12 @@ function add(g,m,name,system,parent=root){const o=new THREE.Mesh(g,m);o.userData
 function init3D(){
  try{
  physics=new EnginePhysics(state.engine);physics.throttle=state.throttle/100;physics.load=state.load/100;physics.rpm=state.rpm;physics.theta=state.cycle;
- const el=document.querySelector('#viewport');if(renderer){controls?.dispose();renderer.dispose();renderer.domElement.remove();renderer=null;}scene=new THREE.Scene();scene.background=new THREE.Color(0xf0f0ec);
- camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(10,6.5,13);
- renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;el.appendChild(renderer.domElement);
- controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.075;controls.minDistance=5;controls.maxDistance=23;controls.target.set(0,.7,0);
+ const el=document.querySelector('#viewport');if(renderer){controls?.dispose();renderer.dispose();renderer.domElement.remove();renderer=null;}scene=new THREE.Scene();
+ camera=new THREE.PerspectiveCamera(36,1,.5,400);
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});renderer.setClearColor(0x000000,0);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.localClippingEnabled=true;el.appendChild(renderer.domElement);
+ scene.environment=createEnvironment(renderer);scene.environmentIntensity=.9;createStudio(scene);
+ controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.075;controls.minDistance=7;controls.maxDistance=110;controls.maxPolarAngle=Math.PI*.495;
  raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();
- scene.add(new THREE.HemisphereLight(0xffffff,0x666862,2.35));const l=new THREE.DirectionalLight(0xffffff,4.2);l.position.set(7,12,9);l.castShadow=true;l.shadow.mapSize.set(2048,2048);l.shadow.camera.near=.1;l.shadow.camera.far=50;scene.add(l);const f=new THREE.DirectionalLight(0xc7d5e4,1.7);f.position.set(-8,5,-8);scene.add(f);const rim=new THREE.DirectionalLight(0xffd7b0,1.1);rim.position.set(4,3,-10);scene.add(rim);
- const floor=new THREE.Mesh(new THREE.CircleGeometry(14,80),new THREE.MeshStandardMaterial({color:0xdedfd9,roughness:.88,metalness:.05}));floor.rotation.x=-Math.PI/2;floor.position.y=-2.25;floor.receiveShadow=true;scene.add(floor);const grid=new THREE.GridHelper(24,24,0xc7c8c2,0xd4d5d0);grid.position.y=-2.23;grid.material.opacity=.32;grid.material.transparent=true;scene.add(grid);const halo=new THREE.Mesh(new THREE.RingGeometry(6.5,6.55,96),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.7,side:THREE.DoubleSide}));halo.rotation.x=-Math.PI/2;halo.position.y=-2.2;scene.add(halo);
  build();resize();if(!resizeHandlerBound){window.addEventListener('resize',resize);resizeHandlerBound=true;}renderer.domElement.addEventListener('pointermove',pointer);renderer.domElement.addEventListener('click',e=>{pointer(e);pick();});requestRenderMeta();drawInstrumentation();if(!animationLoopStarted){animationLoopStarted=true;requestAnimationFrame(loop);}
  }catch(err){
    console.error('Engine Atlas 3D initialization failed:',err);
@@ -96,271 +98,28 @@ function init3D(){
  }
 }
 function build(){
- root=new THREE.Group();scene.add(root);parts=[];moving=[];crankParts=[];camParts=[];valveParts=[];combustion.length=0;const E=engines[state.engine],n=E.cyl,s=3,xs=Array.from({length:n},(_,i)=>(i-(n-1)/2)*s);
- const block=add(geo.box(n*2.55,3.8,4.8,.2),M.alloy,'Engine block','Structure');const pan=add(geo.box(n*2.7,1.05,4.95,.18),M.black,'Oil pan / sump','Structure');pan.position.y=-2.35;
- const head=add(geo.box(n*2.48,1.5,4.65,.18),M.alloy,'Cylinder head','Structure');head.position.y=2.55;
- const cover=add(geo.box(n*2.42,.55,4.5,.14),M.dark,'Valve cover','Structure');cover.position.y=3.62;
- const gasket=add(geo.box(n*2.36,.12,4.4,.04),M.rubber,'Head gasket','Structure');gasket.position.y=1.78;
- xs.forEach((x,i)=>{
-  const liner=add(geo.cyl(E.bore,3.55,32),M.steel,'Cylinder liner','Structure');liner.position.x=x;liner.scale.z=.86;
-  const piston=add(geo.cyl(E.bore*.9,.72,32),M.alloy,'Piston','Motion');piston.position.set(x,.4,0);
-  for(let r=0;r<3;r++){const ring=add(geo.tor(E.bore*.9,.055),r===2?M.gold:M.dark,'Piston rings','Motion',piston);ring.rotation.x=Math.PI/2;ring.position.y=.22-r*.13}
-  const pin=add(geo.cyl(.16,.9,20),M.steel,'Wrist pin','Motion',piston);pin.rotation.z=Math.PI/2;
-  const rodShape=new THREE.Shape();
-  rodShape.moveTo(-.17,-.91);rodShape.lineTo(-.105,-.34);rodShape.lineTo(-.085,.34);rodShape.lineTo(-.15,.91);rodShape.lineTo(.15,.91);rodShape.lineTo(.085,.34);rodShape.lineTo(.105,-.34);rodShape.lineTo(.17,-.91);rodShape.closePath();
-  const rodGeometry=new THREE.ExtrudeGeometry(rodShape,{depth:.14,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.025,bevelThickness:.025});
-  const rod=add(rodGeometry,M.steel,'Connecting rod','Motion');rod.position.set(x,-.55,-.08);rod.userData.baseScale=rod.scale.clone();
-  const bearing=add(geo.cyl(.52,.38,24),M.dark,'Rod bearing','Motion');bearing.rotation.z=Math.PI/2;bearing.position.set(x,-1.48,0);
-  const iv=add(geo.cyl(.13,.72,18),M.blue,'Intake valve','Valvetrain');iv.position.set(x-.48,2.03,.2);
-  const ev=add(geo.cyl(.13,.72,18),M.red,'Exhaust valve','Valvetrain');ev.position.set(x+.48,2.03,.2);valveParts.push({mesh:iv,baseY:iv.position.y,type:'intake',phase:[0,360,360,0,240,120][i]||0});valveParts.push({mesh:ev,baseY:ev.position.y,type:'exhaust',phase:[0,360,360,0,240,120][i]||0});
-  const plug=add(geo.cyl(.09,.5,16),M.gold,'Spark plug','Ignition');plug.position.set(x,2.83,.2);
-  // Transparent combustion volume sits in the chamber and lights only around the power stroke.
-  const flameMat=new THREE.MeshBasicMaterial({color:0xff8a26,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
-  const flame=new THREE.Mesh(new THREE.IcosahedronGeometry(.43,2),flameMat);flame.position.set(x,1.42,2.62);flame.scale.set(.82,.45,.82);root.add(flame);
-  const coreMat=new THREE.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
-  const flameCore=new THREE.Mesh(new THREE.IcosahedronGeometry(.22,1),coreMat);flameCore.position.copy(flame.position);root.add(flameCore);
-  combustion.push({flame,flameCore,phase:[0,360,360,0,240,120][i]||0});
-  moving.push({piston,rod,phase:[0,Math.PI,Math.PI,0,Math.PI*2/3,Math.PI/3][i]||0});
- });
- const crank=add(geo.cyl(.31,n*3.15,32),M.dark,'Crankshaft','Motion');crank.rotation.z=Math.PI/2;crank.position.y=-1.48;crankParts.push(crank);
- xs.forEach((x,i)=>{const w=add(geo.cyl(.68,.32,28),M.steel,'Crankshaft','Motion');w.rotation.z=Math.PI/2;w.position.set(x,-1.48,0);crankParts.push(w);const throwArm=add(geo.box(.38,1.05,.48,.08),M.steel,'Crankshaft','Motion');throwArm.position.set(x,-1.15,0);throwArm.userData.crankThrow=true;throwArm.userData.phase=[0,Math.PI,Math.PI,0,Math.PI*2/3,Math.PI/3][i]||0;crankParts.push(throwArm)});
- const main=add(geo.cyl(.47,n*3.05,28),M.gold,'Main bearing','Motion');main.rotation.z=Math.PI/2;main.position.y=-1.48;main.scale.z=.7;crankParts.push(main);
- const fly=add(geo.cyl(1.62,.38,48),M.dark,'Flywheel / flexplate','Motion');fly.rotation.z=Math.PI/2;fly.position.set(n*1.7,-1.48,0);crankParts.push(fly);
- const camAssembly=new THREE.Group();camAssembly.position.set(0,3,.75);root.add(camAssembly);const cam=add(geo.cyl(.24,n*3,24),M.dark,'Camshaft','Valvetrain',camAssembly);cam.rotation.z=Math.PI/2;camParts.push(camAssembly);
- xs.forEach(x=>[0,1].forEach(j=>{const l=add(geo.cyl(.42,.2,20),M.steel,'Cam lobe','Valvetrain',camAssembly);l.rotation.z=Math.PI/2;l.position.set(x+(j-.5)*.52,(j===0?-.30:.30),0)}));
- const timing=add(geo.tor(1.2,.13),M.dark,'Timing chain / belt','Timing');timing.rotation.x=Math.PI/2;timing.position.set(-n*1.45,1,0);
- const intake=add(geo.box(n*2.35,.72,1.25,.12),M.blue,'Intake manifold','Air & fuel');intake.position.set(0,3.08,2.55);
- const throttle=add(geo.cyl(.48,1,24),M.steel,'Throttle body','Air & fuel');throttle.rotation.x=Math.PI/2;throttle.position.set(0,3.08,3.2);
- const exhaust=add(geo.box(n*2.3,.72,1,.12),M.red,'Exhaust manifold','Air & fuel');exhaust.position.set(0,2.35,-2.45);
- const turbo=add(geo.tor(.82,.28),M.steel,'Turbocharger','Air & fuel');turbo.rotation.x=Math.PI/2;turbo.position.set(n*1.7,1.7,-3);const turboHub=add(geo.cyl(.28,.42,28),M.gold,'Turbocharger','Air & fuel',root);turboHub.rotation.x=Math.PI/2;turboHub.position.set(n*1.7,1.7,-3);for(let i=0;i<8;i++){const blade=add(geo.box(.08,.5,.04,.02),M.steel,'Turbocharger','Air & fuel',root);blade.position.set(n*1.7+Math.cos(i*Math.PI/4)*.42,1.7+Math.sin(i*Math.PI/4)*.42,-3);blade.rotation.z=i*Math.PI/4;}
- const oil=add(geo.cyl(.5,.42,24),M.dark,'Oil pump','Lubrication');oil.rotation.z=Math.PI/2;oil.position.set(-n*1.3,-1.9,.8);
- const filter=add(geo.cyl(.42,.75,24),M.white,'Oil filter','Lubrication');filter.position.set(-n*1.2,-.8,2.35);
- const water=add(geo.cyl(.65,.35,28),M.blue,'Water pump','Cooling');water.rotation.z=Math.PI/2;water.position.set(-n*1.5,0,2.35);
- const starter=add(geo.cyl(.38,1.1,24),M.dark,'Starter motor','Starting');starter.rotation.z=Math.PI/2;starter.position.set(n*1.7,-.8,2.1);
- const alt=add(geo.cyl(.62,.42,32),M.alloy,'Alternator','Starting');alt.rotation.z=Math.PI/2;alt.position.set(-n*1.65,1.15,2.2);for(let i=0;i<10;i++){const fin=add(geo.box(.035,.42,.05,.01),M.dark,'Alternator','Starting',alt);fin.position.x=Math.cos(i*Math.PI/5)*.34;fin.position.y=Math.sin(i*Math.PI/5)*.34;fin.rotation.z=i*Math.PI/5;}
-
- // Precision details: cast ribs, machined fasteners, ports, springs, gears and accessory hardware.
- const bolt=(x,y,z,name='Cylinder head',system='Structure',radius=.075)=>{
-   const b=add(new THREE.CylinderGeometry(radius,radius,.075,8),M.steel,name,system);
-   b.position.set(x,y,z);b.rotation.y=Math.PI/8;
-   const slot=add(geo.box(radius*1.1,.012,.025,.002),M.dark,name,system);
-   slot.position.set(x,y+.039,z);
-   return b;
- };
- const pipe=(points,name,system,material,radius=.12)=>{
-   const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],p[1],p[2])));
-   return add(new THREE.TubeGeometry(curve,28,radius,10,false),material,name,system);
- };
- // Cast aluminium block ribs and machined side covers.
- for(let y=-1.35;y<=1.25;y+=.52){
-   const rib=add(geo.box(n*2.34,.105,.12,.025),M.steel,'Engine block','Structure');
-   rib.position.set(0,y,2.43);
-   const rearRib=add(geo.box(n*2.34,.105,.12,.025),M.dark,'Engine block','Structure');
-   rearRib.position.set(0,y,-2.43);
- }
- const sideCover=add(geo.box(n*1.65,1.55,.09,.08),M.dark,'Engine block','Structure');
- sideCover.position.set(0,-.05,2.51);
- const sideInset=add(geo.box(n*1.48,1.34,.035,.04),M.alloy,'Engine block','Structure');
- sideInset.position.set(0,-.05,2.565);
- for(let i=0;i<Math.max(4,n*2);i++){
-   const x=(i-(Math.max(4,n*2)-1)/2)*.62;
-   for(const z of [-2.49,2.59]){
-     bolt(x,-1.55,z,'Engine block','Structure',.055);
-     bolt(x,1.43,z,'Engine block','Structure',.055);
-   }
- }
- // Head deck fasteners, valve-cover ribs and cap screws.
- for(const x of xs){
-   for(const dx of [-.92,.92]) for(const z of [-1.8,1.8]) bolt(x+dx,3.31,z,'Cylinder head','Structure',.085);
-   for(const z of [-1.85,1.85]){
-     const coverBolt=bolt(x,3.94,z,'Valve cover','Structure',.065);
-     coverBolt.material=M.gold;
-   }
- }
- for(let i=0;i<Math.max(5,n+1);i++){
-   const x=(i-(Math.max(5,n+1)-1)/2)*1.05;
-   const ridge=add(geo.box(.1,.07,3.95,.025),M.steel,'Valve cover','Structure');
-   ridge.position.set(x,3.94,0);
- }
- // Air-cooled bike cylinder fins; on car engines the same visual detail is cast reinforcement.
- if(state.engine==='bike'){
-   for(let y=1.9;y<=2.65;y+=.12){
-     const fin=add(geo.box(n*2.28,.045,5.02,.015),M.steel,'Cylinder head','Structure');
-     fin.position.set(0,y,0);
-   }
- }
- // Individual intake runners and exhaust primaries instead of plain manifold blocks alone.
- for(const x of xs){
-   pipe([[x,2.75,.55],[x,2.9,1.1],[x,3.04,1.7],[x,3.08,2.28]],'Intake manifold','Air & fuel',M.alloy,.145);
-   pipe([[x,2.35,-.48],[x,2.27,-1.05],[x,2.35,-1.72],[x,2.35,-2.38]],'Exhaust manifold','Air & fuel',M.copper,.14);
-   // Flanges and clamp collars at each runner junction.
-   for(const z of [1.95,-1.95]){
-     const flange=add(geo.cyl(.22,.09,24),M.steel,z>0?'Intake manifold':'Exhaust manifold','Air & fuel');
-     flange.rotation.x=Math.PI/2;flange.position.set(x,z>0?3.06:2.35,z);
-   }
- }
- // Valve guides, retainers and visible coil springs for every intake/exhaust valve.
- const springMat=new THREE.MeshStandardMaterial({color:0x9da5ad,metalness:.92,roughness:.24});
- xs.forEach((x,i)=>{
-   for(const side of [-1,1]){
-     const vx=x+side*.48;
-     const guide=add(geo.cyl(.18,.3,24),M.gold,side<0?'Intake valve':'Exhaust valve','Valvetrain');
-     guide.position.set(vx,2.48,.2);
-     const retainer=add(geo.cyl(.2,.09,24),M.steel,side<0?'Intake valve':'Exhaust valve','Valvetrain');
-     retainer.position.set(vx,2.72,.2);
-     const pts=[];
-     for(let j=0;j<=72;j++){
-       const t=j/72,angle=t*Math.PI*12;
-       pts.push(new THREE.Vector3(vx+Math.cos(angle)*.145,2.08+t*.57,.2+Math.sin(angle)*.145));
-     }
-     const spring=add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),180,.022,6,false),springMat,side<0?'Intake valve':'Exhaust valve','Valvetrain');
-     spring.userData.springPhase=i*Math.PI;
-     const keeper=add(geo.cyl(.11,.07,12),M.dark,side<0?'Intake valve':'Exhaust valve','Valvetrain');
-     keeper.position.set(vx,2.77,.2);
-   }
-   // Spark plug ceramic, hex nut and ground electrode.
-   const ceramic=add(geo.cyl(.105,.24,20),M.white,'Spark plug','Ignition');
-   ceramic.position.set(x,2.91,.2);
-   const hex=add(new THREE.CylinderGeometry(.14,.14,.13,6),M.steel,'Spark plug','Ignition');
-   hex.position.set(x,2.78,.2);
-   const electrode=add(geo.cyl(.025,.12,12),M.gold,'Spark plug','Ignition');
-   electrode.position.set(x,2.57,.2);
-   // Machined connecting-rod big-end caps and exposed fasteners.
-   const cap=add(geo.tor(.29,.065),M.steel,'Rod bearing','Motion');
-   cap.rotation.x=Math.PI/2;cap.position.set(x,-1.48,.02);
-   for(const side of [-1,1]){
-     const nut=add(new THREE.CylinderGeometry(.075,.075,.1,6),M.gold,'Rod bearing','Motion');
-     nut.position.set(x+side*.28,-1.43,.16);
-   }
- });
- // Timing drive: toothed crank and cam sprockets, chain links and alignment marks.
- for(const [x,y,r,label] of [[-n*1.45,1,0.58,'Timing chain / belt'],[-n*1.45,2.18,.42,'Timing chain / belt']]){
-   const gear=add(geo.cyl(r,.22,40),M.dark,label,'Timing');
-   gear.rotation.z=Math.PI/2;gear.position.set(x,y,-.15);
-   const hub=add(geo.cyl(r*.3,.28,24),M.gold,label,'Timing');
-   hub.rotation.z=Math.PI/2;hub.position.set(x,y,-.15);
-   for(let t=0;t<24;t++){
-     const a=t*Math.PI/12;
-     const tooth=add(geo.box(.13,.12,.2,.02),M.steel,label,'Timing');
-     tooth.position.set(x+Math.cos(a)*(r+.025),y+Math.sin(a)*(r+.025),-.15);
-     tooth.rotation.z=a;
-   }
- }
- for(let i=0;i<36;i++){
-   const a=i*Math.PI/18;
-   const link=add(geo.box(.11,.055,.045,.012),i%2?M.steel:M.dark,'Timing chain / belt','Timing');
-   link.position.set(-n*1.45+Math.cos(a)*.96,1.58+Math.sin(a)*.96,-.08);
-   link.rotation.z=a+Math.PI/2;
- }
- const timingMark=add(geo.box(.045,.22,.025,.008),M.gold,'Timing chain / belt','Timing');
- timingMark.position.set(-n*1.45+.58,1,-.28);
- // Accessory drive: detailed pulley grooves, spokes and belt path.
- for(const [x,y,r] of [[-n*1.65,1.15,.62],[-n*1.5,0,.48],[n*1.7,-.8,.35]]){
-   for(let k=0;k<4;k++){
-     const groove=add(geo.tor(r-k*.075,.027),M.dark,'Accessory belt','Starting');
-     groove.position.set(x,y,2.22-k*.035);
-   }
-   const hub=add(geo.cyl(r*.24,.5,28),M.gold,'Accessory belt','Starting');
-   hub.rotation.x=Math.PI/2;hub.position.set(x,y,2.22);
-   for(let k=0;k<6;k++){
-     const a=k*Math.PI/3;
-     const spoke=add(geo.box(r*.72,.065,.08,.018),M.steel,'Accessory belt','Starting');
-     spoke.position.set(x+Math.cos(a)*r*.48,y+Math.sin(a)*r*.48,2.22);
-     spoke.rotation.z=a;
-   }
- }
- // Realistic turbocharger compressor wheel with swept, individually visible blades.
- const turboX=n*1.7,turboY=1.7,turboZ=-3;
- const turboRim=add(geo.tor(.72,.075),M.dark,'Turbocharger','Air & fuel');
- turboRim.rotation.x=Math.PI/2;turboRim.position.set(turboX,turboY,turboZ-.24);
- for(let i=0;i<12;i++){
-   const a=i*Math.PI/6;
-   const blade=add(geo.box(.16,.48,.055,.025),i%2?M.steel:M.alloy,'Turbocharger','Air & fuel');
-   blade.position.set(turboX+Math.cos(a)*.34,turboY+Math.sin(a)*.34,turboZ-.29);
-   blade.rotation.z=a+.45;
- }
- const turboNut=add(new THREE.CylinderGeometry(.16,.16,.12,6),M.gold,'Turbocharger','Air & fuel');
- turboNut.rotation.x=Math.PI/2;turboNut.position.set(turboX,turboY,turboZ-.34);
- // Oil galleries and coolant hose runs bring detail to the front accessories.
- pipe([[-n*1.45,.15,2.48],[-n*1.25,.35,2.78],[-n*1.1,.1,2.8],[-n*.9,-.35,2.5]],'Water pump','Cooling',M.blue,.09);
- pipe([[n*1.2,-.55,2.48],[n*1.4,-.3,2.8],[n*1.55,-.6,2.82],[n*1.65,-.8,2.48]],'Oil filter','Lubrication',M.black,.085);
- // Gearbox cutaway cluster: stacked gears with tooth detail, bearing races and shafts.
- const gearOriginX=n*1.55,gearOriginY=-1.55,gearOriginZ=-2.72;
- for(const [idx,r] of [[0,.62],[1,.42],[2,.29]]){
-   const gx=gearOriginX+idx*.72,gy=gearOriginY+(idx%2)*.18;
-   const gear=add(geo.cyl(r,.22,36),idx===1?M.gold:M.steel,'Gearbox','Transmission');
-   gear.rotation.x=Math.PI/2;gear.position.set(gx,gy,gearOriginZ);
-   const hub=add(geo.cyl(r*.24,.32,20),M.dark,'Gearbox','Transmission');
-   hub.rotation.x=Math.PI/2;hub.position.set(gx,gy,gearOriginZ);
-   for(let t=0;t<24;t++){
-     const a=t*Math.PI/12;
-     const tooth=add(geo.box(.12,.12,.2,.015),M.steel,'Gearbox','Transmission');
-     tooth.position.set(gx+Math.cos(a)*(r+.025),gy+Math.sin(a)*(r+.025),gearOriginZ);
-     tooth.rotation.z=a;
-   }
- }
- const gearCase=add(geo.box(3.2,1.35,.22,.12),M.dark,'Gearbox','Transmission');
- gearCase.position.set(gearOriginX+.55,gearOriginY-.15,gearOriginZ-.24);
- for(let i=0;i<8;i++){
-   const x=gearOriginX-.75+(i%4)*.85,y=gearOriginY-.62+Math.floor(i/4)*.9;
-   bolt(x,y,gearOriginZ-.37,'Gearbox','Transmission',.055);
- }
-
+ eng=buildEngine(ENGINES[state.engine]);scene.add(eng.root);parts=eng.parts;
+ const c=eng.bounds.center,sz=eng.bounds.size,d=Math.max(sz.x,sz.y*1.25)*1.85;
+ home.target.set(c.x,c.y-.5,c.z);home.cam.set(c.x+d*.62,c.y+d*.42,c.z+d*.92);
+ focusTarget.copy(home.target);focusCamera.copy(home.cam);focusAnimating=false;
+ camera.position.copy(home.cam);controls.target.copy(home.target);controls.update();controls.saveState();
  updateVisibility();select(state.selected,false)
 }
-function updateVisibility(){
- parts.forEach(o=>o.visible=(state.system==='All'||o.userData.system===state.system)&&(!state.isolate||o.userData.part===state.selected));
- const block=parts.find(o=>o.userData.part==='Engine block');if(block)block.material=state.cutaway?new THREE.MeshStandardMaterial({color:0xb8bbb7,transparent:true,opacity:.15,metalness:.5,roughness:.55}):M.alloy;
-}
-function highlight(name){parts.forEach(o=>{if(o.userData.originalMaterial&&!o.userData.originalMaterial.emissive){};if(o.userData.highlighted&&o.userData.originalMaterial){o.material=o.userData.originalMaterial;o.userData.highlighted=false}});const selected=parts.filter(o=>o.userData.part===name);selected.forEach(o=>{if(!o.userData.originalMaterial)o.userData.originalMaterial=o.material;o.material=o.userData.originalMaterial.clone();if(o.material.emissive){o.material.emissive.set(0x6b706c);o.material.emissiveIntensity=.22}o.userData.highlighted=true})}
+function updateVisibility(){eng&&eng.applyFilter({system:state.system,isolate:state.isolate?state.selected:null})}
+function highlight(name){eng&&eng.highlight(name)}
 function select(name,focus=true){
  state.selected=name;highlight(name);document.querySelectorAll('.partRow').forEach(x=>x.classList.toggle('selected',x.dataset.part===name));
  const d=document.querySelector('#detail');if(d)d.innerHTML=`<span class="detailLabel">${info[name]?.system||'ENGINE'} · COMPONENT</span><h3>${name}</h3><p>${info[name]?.desc||'Mechanical component in the engine assembly.'}</p><div class="chips"><span>3D SELECTABLE</span><span>INTERACTIVE</span></div>`;
- if(focus){const o=parts.find(x=>x.userData.part===name);if(o){focusTarget.copy(o.getWorldPosition(new THREE.Vector3()));const offset=new THREE.Vector3(4.8,2.8,6.5);focusCamera.copy(focusTarget).add(offset);focusAnimating=true;}}
+ if(focus){const o=parts.find(x=>x.userData.part===name);if(o){focusTarget.copy(o.getWorldPosition(new THREE.Vector3()));const offset=new THREE.Vector3(8,5,12);focusCamera.copy(focusTarget).add(offset);focusAnimating=true;}}
 }
 function pointer(e){const r=renderer.domElement.getBoundingClientRect();mouse.x=(e.clientX-r.left)/r.width*2-1;mouse.y=-(e.clientY-r.top)/r.height*2+1}
 function pick(){raycaster.setFromCamera(mouse,camera);const h=raycaster.intersectObjects(parts,true)[0];if(h){let o=h.object;while(o&&!o.userData.part)o=o.parent;if(o?.userData.part){select(o.userData.part);document.querySelectorAll('.partRow').forEach(x=>x.classList.toggle('selected',x.dataset.part===state.selected))}}}
 function resize(){if(!renderer)return;const el=document.querySelector('#viewport');if(!el||!el.clientWidth||!el.clientHeight)return;camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix();renderer.setSize(el.clientWidth,el.clientHeight,false)}
-function explode(){
- parts.forEach(o=>{if(!o.userData.base)o.userData.base=o.position.clone();let d=new THREE.Vector3(),n=o.userData.part;
-  if(['Cylinder head','Valve cover','Head gasket','Camshaft','Cam lobe','Intake valve','Exhaust valve','Spark plug'].includes(n))d.y=2.3;
-  if(['Piston','Piston rings','Wrist pin'].includes(n))d.y=1.15;
-  if(['Connecting rod','Rod bearing'].includes(n))d.y=-1;
-  if(['Crankshaft','Main bearing','Oil pump'].includes(n))d.y=-1.5;
-  if(n==='Oil pan / sump')d.y=-2.7;if(['Intake manifold','Throttle body'].includes(n))d.z=2.5;if(['Exhaust manifold','Turbocharger'].includes(n))d.z=-2.6;if(['Alternator','Water pump','Starter motor','Oil filter'].includes(n))d.x=2.5;
-  const target=o.userData.base.clone().add(d);o.position.lerp(state.explode?target:o.userData.base,.16);
- });
-}
 function loop(now){
  requestAnimationFrame(loop);
  const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;
  if(state.running){physics.throttle=state.throttle/100;physics.load=state.load/100;const snap=physics.step(dt);state.rpm=snap.rpm;state.cycle=snap.theta;}else{physics.theta=state.cycle;physics.rpm=state.rpm;}
- const crankRad=state.cycle*Math.PI/180;
- crankParts.forEach(o=>{if(o.userData.crankThrow){const a=crankRad+(o.userData.phase||0);o.position.y=-1.48+Math.cos(a)*.72;o.position.z=Math.sin(a)*.72;o.rotation.x=a;}else if(o.userData.part==='Crankshaft'||o.userData.part==='Flywheel / flexplate'){o.rotation.x=crankRad;}});
- camParts.forEach(o=>{o.rotation.x=crankRad/2;});
- moving.forEach(m=>{
-  // Match visual piston travel to the slider-crank kinematics used by the physics model.
-  const a=crankRad+m.phase;
-  const normalized=physics.pistonPosition(a)/Math.max(.001,physics.spec.stroke);
-  const y=.87-normalized*1.64;
-  const crankZ=Math.sin(a)*.72,crankY=-1.48+Math.cos(a)*.72,dy=crankY-y;
-  m.piston.position.y=y;
-  m.rod.position.set(m.piston.position.x,(y+crankY)/2,crankZ/2);
-  m.rod.rotation.x=Math.atan2(-crankZ,dy);
-  m.rod.scale.y=Math.max(.35,Math.hypot(crankZ,dy)/1.82);
-});
-combustion.forEach(c=>{
-  const deg=((state.cycle+c.phase)%720+720)%720;
-  const ignition=state.engine==='diesel'?350:360-(physics.sparkAdvance||12);
-  const rise=Math.max(0,Math.min(1,(deg-ignition)/18));
-  const fall=Math.max(0,Math.min(1,(ignition+118-deg)/62));
-  const pulse=deg>=ignition&&deg<=ignition+118?Math.sin(Math.PI*rise/2)*fall:0;
-  const strength=Math.max(0,Math.min(1,pulse))*Math.max(.12,state.throttle/100);
-  c.flame.material.opacity=strength*.72;
-  c.flame.scale.set(.55+strength*.6,.28+strength*.9,.55+strength*.6);
-  c.flameCore.material.opacity=strength*.9;
-  c.flameCore.scale.setScalar(.35+strength*.9);
-});
+ eng&&eng.update({theta:state.cycle,physics,dt,explode:state.explode,cutaway:state.cutaway,xray:state.xray});
 if(dyno.running){
   dyno.elapsed+=dt;dyno.lastSample+=dt;
   if(dyno.lastSample>=.12){
@@ -375,8 +134,6 @@ if(dyno.running){
   }
   if(physics.rpm>=physics.spec.redline-30||dyno.elapsed>22){dyno.running=false;const btn=document.querySelector('#dynoStart');if(btn)btn.textContent='▶ RUN DYNO PULL';requestRenderMeta();drawDyno();}
 }
- valveParts.forEach(v=>{const deg=(state.cycle+v.phase)%720;const lift=physics.valveLift(deg,v.type);v.mesh.position.y=v.baseY-lift*.32;});
- explode();
  if(controls){if(focusAnimating){controls.target.lerp(focusTarget,.12);camera.position.lerp(focusCamera,.08);if(camera.position.distanceTo(focusCamera)<.08&&controls.target.distanceTo(focusTarget)<.08)focusAnimating=false;}controls.update();}
  renderer?.render(scene,camera);plotClock+=dt;if(plotClock>.3){plotClock=0;requestRenderMeta();drawInstrumentation();}
 }
@@ -429,15 +186,15 @@ function refreshCatalog(){
  document.querySelectorAll('.partRow').forEach(b=>b.onclick=()=>select(b.dataset.part));
 }
 function bindLibrary(){
- document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(!camera||!controls)return;const target=controls.target.clone();const offsets={front:new THREE.Vector3(0,2.2,15),side:new THREE.Vector3(15,2.2,0),top:new THREE.Vector3(0,16,.01)};focusTarget.copy(target);focusCamera.copy(target).add(offsets[b.dataset.view]);focusAnimating=true;});
+ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(!camera||!controls)return;const target=controls.target.clone();const offsets={front:new THREE.Vector3(0,4,44),side:new THREE.Vector3(44,4,0),top:new THREE.Vector3(0,48,.01)};focusTarget.copy(target);focusCamera.copy(target).add(offsets[b.dataset.view]);focusAnimating=true;});
  document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{const presets={idle:{throttle:18,load:8},road:{throttle:42,load:32},power:{throttle:92,load:12}};const p=presets[b.dataset.preset];state.throttle=p.throttle;state.load=p.load;physics.throttle=p.throttle/100;physics.load=p.load/100;document.querySelector('#throttle').value=p.throttle;document.querySelector('#load').value=p.load;document.querySelector('#throttleVal').textContent=p.throttle+'%';document.querySelector('#loadVal').textContent=p.load+'%';document.querySelectorAll('[data-preset]').forEach(x=>x.classList.toggle('active',x===b));if(!state.running){state.running=true;}requestRenderMeta();});
  document.querySelectorAll('[data-engine]').forEach(b=>b.onclick=()=>{state.engine=b.dataset.engine;state.selected='Piston';renderLibrary()});
  document.querySelectorAll('[data-system]').forEach(b=>b.onclick=()=>{state.system=b.dataset.system;document.querySelectorAll('[data-system]').forEach(x=>x.classList.toggle('active',x.dataset.system===state.system));updateVisibility();refreshCatalog()});
  document.querySelectorAll('.partRow').forEach(b=>b.onclick=()=>select(b.dataset.part));
- document.querySelector('#explodeBtn').onclick=()=>{state.explode=!state.explode;document.querySelector('#explodeBtn').textContent=state.explode?'ASSEMBLE':'EXPLODE';document.querySelector('#explodeBtn').classList.toggle('active',state.explode)};
+ document.querySelector('#explodeBtn').onclick=()=>{state.explode=!state.explode;{const off=camera.position.clone().sub(controls.target).multiplyScalar(state.explode?1.3:1/1.3);focusTarget.copy(controls.target);focusTarget.y+=state.explode?2.2:-2.2;focusCamera.copy(focusTarget).add(off);focusAnimating=true}document.querySelector('#explodeBtn').textContent=state.explode?'ASSEMBLE':'EXPLODE';document.querySelector('#explodeBtn').classList.toggle('active',state.explode)};
  document.querySelector('#cutBtn').onclick=()=>{state.cutaway=!state.cutaway;document.querySelector('#cutBtn').textContent=state.cutaway?'SOLID':'CUTAWAY';document.querySelector('#cutBtn').classList.toggle('active',state.cutaway);updateVisibility()};
  document.querySelector('#isoBtn').onclick=()=>{state.isolate=!state.isolate;document.querySelector('#isoBtn').textContent=state.isolate?'SHOW ALL':'ISOLATE';document.querySelector('#isoBtn').classList.toggle('active',state.isolate);updateVisibility()};
- document.querySelector('#reset').onclick=()=>{dyno.running=false;dyno.points=[];dyno.peakTorque=0;dyno.peakPower=0;document.querySelector('#dynoStart').textContent='▶ RUN DYNO PULL';state.explode=false;state.cutaway=false;state.isolate=false;state.cycle=0;state.running=false;state.throttle=18;state.load=25;state.rpm=900;physics.reset();physics.throttle=.18;physics.load=.25;physics.rpm=900;focusTarget.set(0,.7,0);focusCamera.set(10,6.5,13);focusAnimating=false;controls.reset();updateVisibility();select(state.selected,false);requestRenderMeta();document.querySelector('#throttle').value=18;document.querySelector('#load').value=25;document.querySelector('#throttleVal').textContent='18%';document.querySelector('#loadVal').textContent='25%';physics.sparkAdvance=12;document.querySelector('#advance').value=12;document.querySelector('#advanceVal').textContent='12°'};
+ document.querySelector('#reset').onclick=()=>{dyno.running=false;dyno.points=[];dyno.peakTorque=0;dyno.peakPower=0;document.querySelector('#dynoStart').textContent='▶ RUN DYNO PULL';state.explode=false;state.cutaway=false;state.isolate=false;state.cycle=0;state.running=false;state.throttle=18;state.load=25;state.rpm=900;physics.reset();physics.throttle=.18;physics.load=.25;physics.rpm=900;focusTarget.copy(home.target);focusCamera.copy(home.cam);focusAnimating=false;controls.reset();updateVisibility();select(state.selected,false);requestRenderMeta();document.querySelector('#throttle').value=18;document.querySelector('#load').value=25;document.querySelector('#throttleVal').textContent='18%';document.querySelector('#loadVal').textContent='25%';physics.sparkAdvance=12;document.querySelector('#advance').value=12;document.querySelector('#advanceVal').textContent='12°'};
  document.querySelector('#play').onclick=()=>{state.running=!state.running;requestRenderMeta();};
  document.querySelector('#dynoLoad').oninput=e=>{state.load=+e.target.value;physics.load=state.load/100;document.querySelector('#dynoLoadValue').textContent=state.load+'%';document.querySelector('#load').value=state.load;document.querySelector('#loadVal').textContent=state.load+'%';};
  document.querySelector('#dynoStart').onclick=()=>{
@@ -461,3 +218,4 @@ function compare(){
 function tab(t){document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));t==='library'?renderLibrary():t==='learn'?learn():compare()}
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>tab(b.dataset.tab));let searchTimer;document.querySelector('#search').oninput=e=>{state.search=e.target.value;clearTimeout(searchTimer);searchTimer=setTimeout(()=>refreshCatalog(),120);};document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('#search').focus()}});
 renderLibrary();
+if(new URLSearchParams(location.search).has('debug'))window.__pieces={state,get eng(){return eng},get camera(){return camera},get controls(){return controls},get physics(){return physics},THREE};

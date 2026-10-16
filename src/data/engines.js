@@ -171,7 +171,7 @@ export function makeLayout(spec) {
   // 60° V: two banks, three split-pin throws. Labels 1-3 on bank A (leans +Z), 4-6 on bank B.
   const half = (spec.vAngle / 2) * DEG;
   const throwPitch = 0.122;
-  const jog = 0.020;
+  const jog = 0.026;
   const phases = {};
   // Throw centres at 60°, 300°, 540° give three throws 120° apart with 60° split pins.
   const T = [60, 300, 540];
