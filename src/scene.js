@@ -109,7 +109,7 @@ export function createStage(container, { onPick, onHover } = {}) {
     const c = eng?.worldCenterOf(name);
     if (!c) return;
     const dir = camera.position.clone().sub(controls.target).normalize();
-    const dist = Math.max(14, Math.min(26, camera.position.distanceTo(controls.target) * 0.6));
+    const dist = Math.max(14, Math.min(26, camera.position.distanceTo(controls.target) * 0.6)) * (camera.aspect < 1 ? 1.6 : 1);
     flyTo(c, c.clone().add(dir.multiplyScalar(dist)));
   }
   function dolly(factor, lift = 0) {

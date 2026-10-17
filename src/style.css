@@ -284,3 +284,5 @@ figcaption { display: flex; justify-content: space-between; gap: 10px; flex-wrap
 .tourBtns button { min-height: 38px; padding: 0 14px; border-radius: 10px; font-weight: 600; font-size: 13.5px; border: 1px solid var(--glass-line); color: var(--on-stage); }
 .tourBtns .solid { background: #f4f5f6; color: #15181b; border: 0; } .tourBtns .ghost { margin-left: auto; background: transparent; } .tourBtns button:disabled { opacity: .35; cursor: default; }
 .cap.sub { margin: 14px 0 8px; }
+
+#engineTab.tour .pin:not(.sel) { opacity: .4; }

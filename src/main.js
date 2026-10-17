@@ -309,6 +309,7 @@ function tourStart(id) {
   state.tour = { id, i: 0 }; $('#engineTab').classList.add('tour'); $('#tourBar').hidden = false; renderTourChips(); tourShow();
 }
 function tourStep(d) {
+  if (!state.tour) return;
   const n = tourSteps(state.tour.id, spec()).length, i = state.tour.i + d;
   if (i >= n) return tourEnd(); state.tour.i = Math.max(0, i); tourShow();
 }
