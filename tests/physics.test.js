@@ -107,3 +107,23 @@ describe('anatomy data', () => {
     expect(Object.keys(ANATOMY).length).toBe(CATALOG.length);
   });
 });
+
+import { LAYERS, TOURS, tourSteps, hiddenAt, removalStep } from '../src/data/layers.js';
+describe('layers and tours', () => {
+  const names = new Set(CATALOG.map((p) => p.name));
+  it('layers only name catalogue parts, and peel cumulatively', () => {
+    for (const l of LAYERS) for (const n of l.remove) expect(names.has(n), n).toBe(true);
+    expect(hiddenAt(0).size).toBe(0);
+    expect(hiddenAt(LAYERS.length - 1).has('Engine block')).toBe(true);
+    expect(hiddenAt(LAYERS.length - 1).has('Piston')).toBe(false);
+    expect(removalStep('Piston')).toBe(0);
+    expect(removalStep('Cylinder head')).toBe(4);
+  });
+  it('every tour has steps for every engine, all naming catalogue parts', () => {
+    for (const [id, t] of Object.entries(TOURS)) for (const e of Object.values(ENGINES)) {
+      const steps = tourSteps(id, e);
+      expect(steps.length, `${id}/${e.id}`).toBeGreaterThan(3);
+      for (const s of steps) { expect(names.has(s.part), s.part).toBe(true); expect(partsFor(e).some((p) => p.name === s.part), `${id}/${e.id}/${s.part}`).toBe(true); }
+    }
+  });
+});

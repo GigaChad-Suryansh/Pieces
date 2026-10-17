@@ -774,12 +774,12 @@ export function buildEngine(spec, opts = {}) {
   }
 
   // ---- visibility / highlighting ----------------------------------------------------------------------------
-  function applyFilter({ system = 'All', isolate = null } = {}) {
-    state.filter = { system, isolate };
+  function applyFilter({ system = 'All', isolate = null, hide = null } = {}) {
+    state.filter = { system, isolate, hide };
     for (const p of parts) {
       const sysOk = system === 'All' || p.userData.system === system;
       const isoOk = !isolate || p.userData.part === isolate;
-      p.visible = sysOk && isoOk;
+      p.visible = sysOk && isoOk && !(hide && hide.has(p.userData.part));
     }
   }
 
