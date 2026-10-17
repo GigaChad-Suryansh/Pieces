@@ -94,7 +94,7 @@ export const ENGINES = {
   },
   bike: {
     id: 'bike',
-    short: 'I4 bike',
+    short: '4B',
     name: '1.0L Motorcycle',
     sub: 'Petrol · DOHC · high-revving',
     blurb: 'Short stroke, big bore, 12,000 rpm. Built to scream.',

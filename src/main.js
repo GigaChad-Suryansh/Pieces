@@ -1,221 +1,339 @@
+import '@fontsource-variable/big-shoulders-display';
+import '@fontsource-variable/ibm-plex-sans';
 import './style.css';
-import * as THREE from 'three';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {EnginePhysics} from './physics.js';
-import {setupQuiz} from './quiz.js';
-import {buildEngine} from './engine3d/build.js';
-import {ENGINES} from './data/engines.js';
-import {createEnvironment,createStudio} from './engine3d/studio.js';
+import { EnginePhysics } from './physics.js';
+import { ENGINES } from './data/engines.js';
+import { SYSTEMS, SYSTEM_COLOR, PART_INFO, partsFor } from './data/catalog.js';
+import { createStage } from './scene.js';
+import { createCallout } from './ui/callout.js';
+import { tachMarkup, tachUpdate } from './ui/tach.js';
+import { drawPressure, drawPV, drawCurves, STROKES, strokeAt } from './ui/charts.js';
+import { mountLearn } from './views/learn.js';
+import { mountCompare } from './views/compare.js';
 
-const engines={
- i4:{name:'2.0L Inline-4',sub:'Petrol · DOHC · 16 valves',cyl:4,bore:1.75,stroke:2.05},
- v6:{name:'3.0L V6',sub:'Petrol · DOHC · 24 valves',cyl:6,bore:1.55,stroke:1.95},
- diesel:{name:'2.2L Turbo Diesel',sub:'Diesel · common rail · turbo',cyl:4,bore:1.82,stroke:2.15},
- bike:{name:'1.0L Motorcycle',sub:'Petrol · DOHC · high-revving',cyl:4,bore:1.42,stroke:1.75}
+const PRESETS = { idle: { throttle: 0, load: 8 }, road: { throttle: 40, load: 32 }, power: { throttle: 92, load: 12 } };
+const state = {
+  tab: 'engine', engine: 'i4', selected: 'Piston', system: 'All', search: '',
+  explode: false, cutaway: false, xray: false, isolate: false,
+  running: false, rpm: 850, cycle: 0, throttle: 18, load: 25, advance: 12, preset: null,
 };
-const catalog=[
-['Structure','Engine block','Main structural casting containing cylinder bores and oil/coolant passages.'],
-['Structure','Cylinder liner','Precision bore surface in which the piston travels.'],
-['Structure','Cylinder head','Closes the cylinders and carries combustion chambers, ports and valvetrain.'],
-['Structure','Head gasket','Seals combustion pressure and oil/coolant passages between head and block.'],
-['Structure','Valve cover','Covers the upper valvetrain and retains lubricant.'],
-['Structure','Oil pan / sump','Reservoir at the bottom of the engine that collects oil.'],
-['Motion','Piston','Receives combustion pressure and transfers force to the connecting rod.'],
-['Motion','Piston rings','Seal combustion gases, control oil and transfer heat to the cylinder wall.'],
-['Motion','Wrist pin','Connects the piston to the small end of the connecting rod.'],
-['Motion','Connecting rod','Transfers force between piston and crankshaft.'],
-['Motion','Rod bearing','Precision bearing between the rod big end and crank journal.'],
-['Motion','Crankshaft','Converts piston reciprocation into rotary motion.'],
-['Motion','Main bearing','Supports crankshaft journals inside the block.'],
-['Motion','Crank pulley','Front pulley for accessory drive and timing reference.'],
-['Motion','Flywheel / flexplate','Adds rotational inertia and couples the crankshaft to the transmission.'],
-['Valvetrain','Camshaft','Runs at half crank speed in a four-stroke engine and controls valve events.'],
-['Valvetrain','Cam lobe','Eccentric profile that produces valve lift.'],
-['Valvetrain','Intake valve','Admits fresh charge into the combustion chamber.'],
-['Valvetrain','Exhaust valve','Releases combustion products.'],
-['Valvetrain','Valve spring','Returns a valve toward its seat and maintains contact.'],
-['Valvetrain','Rocker arm','Lever transmitting cam motion to a valve in rocker-based layouts.'],
-['Valvetrain','Valve guide','Guides the valve stem.'],
-['Valvetrain','Valve seat','Machined sealing surface for a closed valve.'],
-['Timing','Timing chain / belt','Synchronizes crankshaft and camshaft rotation.'],
-['Timing','Timing tensioner','Maintains timing-drive tension.'],
-['Timing','Timing guide','Controls timing-chain path and vibration.'],
-['Air & fuel','Intake manifold','Distributes incoming air or charge to the cylinders.'],
-['Air & fuel','Throttle body','Controls intake airflow in throttle-controlled gasoline engines.'],
-['Air & fuel','Fuel rail','Supplies pressurized fuel to injectors.'],
-['Air & fuel','Fuel injector','Meters and atomizes fuel.'],
-['Air & fuel','Air filter','Removes particles from intake air.'],
-['Air & fuel','Exhaust manifold','Collects exhaust gas from cylinder outlets.'],
-['Air & fuel','Turbocharger','Uses exhaust energy to compress intake air.'],
-['Air & fuel','Intercooler','Cools compressed intake air in boosted systems.'],
-['Ignition','Spark plug','Creates the spark that initiates combustion in gasoline engines.'],
-['Ignition','Ignition coil','Raises battery voltage for the spark plug.'],
-['Ignition','Glow plug','Assists cold starting and combustion in diesel engines.'],
-['Cooling','Water pump','Circulates coolant through the engine and cooling circuit.'],
-['Cooling','Thermostat','Regulates coolant flow and operating temperature.'],
-['Cooling','Coolant jacket','Passages around hot areas carrying heat into coolant.'],
-['Cooling','Radiator','Rejects coolant heat to ambient air.'],
-['Cooling','Cooling fan','Moves air through the radiator when required.'],
-['Lubrication','Oil pump','Draws oil from the sump and supplies pressurized lubricant.'],
-['Lubrication','Oil filter','Removes particles and contaminants from engine oil.'],
-['Lubrication','Oil gallery','Internal passage carrying lubricant to bearings and components.'],
-['Lubrication','Oil jet','Directs lubricant toward piston undersides on some engines.'],
-['Exhaust','Catalytic converter','Uses catalyst surfaces to reduce regulated exhaust pollutants.'],
-['Exhaust','Oxygen sensor','Measures exhaust oxygen for engine-control feedback.'],
-['Exhaust','EGR valve','Routes controlled exhaust gas back to the intake on equipped engines.'],
-['Starting','Starter motor','Electric motor that rotates the crankshaft during startup.'],
-['Starting','Alternator','Generates electrical power and maintains the vehicle battery.']
-];
-const info=Object.fromEntries(catalog.map(x=>[x[1],{system:x[0],desc:x[2]}]));
-const state={engine:'i4',selected:'Piston',system:'All',search:'',explode:false,cutaway:false,isolate:false,running:false,xray:false,rpm:900,cycle:0,throttle:18,load:25};
-let plotClock=0;const history={rpm:[],torque:[],temp:[]};let animationLoopStarted=false,resizeHandlerBound=false;
-let physics=new EnginePhysics(state.engine);
-const combustion=[];
-const dyno={running:false,elapsed:0,lastSample:0,points:[],peakTorque:0,peakPower:0};
-let scene,camera,renderer,controls,raycaster,mouse,eng,parts=[],last=performance.now(),focusTarget=new THREE.Vector3(0,6,0),focusCamera=new THREE.Vector3(30,18,46),focusAnimating=false;const home={target:new THREE.Vector3(),cam:new THREE.Vector3()};
+const dyno = { running: false, elapsed: 0, last: 0, points: [] };
+let physics = new EnginePhysics(state.engine);
+const spec = () => ENGINES[state.engine];
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-document.querySelector('#app').innerHTML=`
-<header class="topbar"><div class="brand">PIECES <span>ENGINEVERSE</span></div><div class="search"><span>⌕</span><input id="search" placeholder="Search parts, systems, engines…"></div><nav><button class="nav active" data-tab="library">Library</button><button class="nav" data-tab="learn">Learn</button><button class="nav" data-tab="compare">Compare</button></nav><kbd>K</kbd><div class="avatar">S</div></header>
-<main class="appShell"><section class="intro"><div><span class="eyebrow">INTERACTIVE 3D ENGINEERING LAB</span><h1>See how an engine<br><em>actually moves.</em></h1><p>Rotate real-world-inspired engine assemblies, inspect individual parts and watch the four-stroke mechanism move in real time.</p></div><div class="stats"><b>50+</b><span>catalogued parts</span><b>4</b><span>road-engine families</span><b>720°</b><span>four-stroke cycle</span></div></section><section id="workspace"></section></main>`;
+// ---------------------------------------------------------------------------------------------------- shell
+$('#app').innerHTML = `
+<header class="top">
+  <a class="brand" href="./" aria-label="Pieces home"><span class="mark" aria-hidden="true"></span><b>PIECES</b><i>Engineverse</i></a>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" data-tab="engine" aria-selected="true">Engine</button>
+    <button role="tab" data-tab="learn" aria-selected="false">Learn</button>
+    <button role="tab" data-tab="compare" aria-selected="false">Compare</button>
+  </nav>
+  <label class="search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4.5 4.5"/></svg>
+    <input id="search" type="search" placeholder="Search parts" autocomplete="off" aria-label="Search parts"><kbd>/</kbd></label>
+</header>
+<main>
+  <div id="engineTab" class="tabPane"></div>
+  <div id="learnTab" class="tabPane" hidden></div>
+  <div id="compareTab" class="tabPane" hidden></div>
+</main>
+<footer class="foot">Pieces · an educational engine playground. Physics is a reduced-order model of real engine geometry; figures are indicative, not calibrated.</footer>`;
 
-const M={steel:new THREE.MeshPhysicalMaterial({color:0x777b78,roughness:.25,metalness:.9,clearcoat:.18}),alloy:new THREE.MeshPhysicalMaterial({color:0xc4c7c3,roughness:.34,metalness:.78,clearcoat:.22}),dark:new THREE.MeshPhysicalMaterial({color:0x252827,roughness:.23,metalness:.88,clearcoat:.12}),black:new THREE.MeshPhysicalMaterial({color:0x121413,roughness:.58,metalness:.2}),red:new THREE.MeshPhysicalMaterial({color:0xb94139,roughness:.28,metalness:.48,clearcoat:.25}),blue:new THREE.MeshPhysicalMaterial({color:0x3d6ea4,roughness:.3,metalness:.45,clearcoat:.2}),gold:new THREE.MeshPhysicalMaterial({color:0xd0a044,roughness:.22,metalness:.86,clearcoat:.2}),rubber:new THREE.MeshStandardMaterial({color:0x202220,roughness:.8}),white:new THREE.MeshPhysicalMaterial({color:0xe7e8e4,roughness:.4,metalness:.25,clearcoat:.18}),copper:new THREE.MeshPhysicalMaterial({color:0xa85f35,roughness:.24,metalness:.82})};
-const geo={box:(x,y,z,r=.12)=>new THREE.BoxGeometry(x,y,z),cyl:(r,h,s=32)=>new THREE.CylinderGeometry(r,r,h,s),tor:(R,r)=>new THREE.TorusGeometry(R,r,16,48)};
-function add(g,m,name,system,parent=root){const o=new THREE.Mesh(g,m);o.userData={part:name,system};o.castShadow=o.receiveShadow=true;parent.add(o);parts.push(o);return o}
-function init3D(){
- try{
- physics=new EnginePhysics(state.engine);physics.throttle=state.throttle/100;physics.load=state.load/100;physics.rpm=state.rpm;physics.theta=state.cycle;
- const el=document.querySelector('#viewport');if(renderer){controls?.dispose();renderer.dispose();renderer.domElement.remove();renderer=null;}scene=new THREE.Scene();
- camera=new THREE.PerspectiveCamera(36,1,.5,400);
- renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});renderer.setClearColor(0x000000,0);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.localClippingEnabled=true;el.appendChild(renderer.domElement);
- scene.environment=createEnvironment(renderer);scene.environmentIntensity=.9;createStudio(scene);
- controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.075;controls.minDistance=7;controls.maxDistance=110;controls.maxPolarAngle=Math.PI*.495;
- raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();
- build();resize();if(!resizeHandlerBound){window.addEventListener('resize',resize);resizeHandlerBound=true;}renderer.domElement.addEventListener('pointermove',pointer);renderer.domElement.addEventListener('click',e=>{pointer(e);pick();});requestRenderMeta();drawInstrumentation();if(!animationLoopStarted){animationLoopStarted=true;requestAnimationFrame(loop);}
- }catch(err){
-   console.error('Engine Atlas 3D initialization failed:',err);
-   const el=document.querySelector('#viewport');
-   if(el) el.insertAdjacentHTML('beforeend',`<div class="engineError"><b>3D simulation could not start</b><span>${String(err?.message||err)}</span><small>Try Chrome/Edge with hardware acceleration enabled.</small></div>`);
- }
+$('#engineTab').innerHTML = `
+<section class="engineView">
+  <aside class="rail" aria-label="Engines and parts">
+    <div class="railBlock"><h2 class="cap">Engine</h2><div id="engineList" class="engineList"></div></div>
+    <div class="railBlock"><h2 class="cap">Systems</h2><div id="chips" class="chips"></div></div>
+    <div class="railBlock grow"><h2 class="cap"><span id="partCount">Parts</span></h2><ul id="partList" class="partList"></ul></div>
+  </aside>
+
+  <section class="stage" aria-label="3D engine">
+    <div id="viewport" class="viewport">
+      <div class="stageHead">
+        <div class="title"><h1 id="engName"></h1><p id="engSub"></p></div>
+        <div class="tools" role="toolbar" aria-label="View controls">
+          <div class="seg" role="group" aria-label="Camera"><button data-view="iso" class="on">3/4</button><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="top">Top</button></div>
+          <div class="seg" role="group" aria-label="Display">
+            <button data-tool="explode" aria-pressed="false">Explode</button>
+            <button data-tool="cutaway" aria-pressed="false">Cutaway</button>
+            <button data-tool="xray" aria-pressed="false">X-ray</button>
+            <button data-tool="isolate" aria-pressed="false">Isolate</button>
+          </div>
+          <button class="ghost" id="resetBtn" title="Reset view and engine">Reset</button>
+        </div>
+      </div>
+      <div class="dial" id="dial"></div>
+      <div class="deck">
+        <div class="deckTop">
+          <button class="play" id="play" aria-label="Start engine"></button>
+          <div class="phase"><small>Cylinder 1</small><b id="phaseName">Intake</b></div>
+          <div class="presets" role="group" aria-label="Drive mode"><button data-preset="idle">Idle</button><button data-preset="road">Road</button><button data-preset="power">Power</button></div>
+          <span class="deg"><b id="degNum">0</b>°</span>
+        </div>
+        <div class="ribbon" id="ribbon" role="slider" tabindex="0" aria-label="Crank angle" aria-valuemin="0" aria-valuemax="720" aria-valuenow="0">
+          ${STROKES.map((s) => `<span class="seg4" style="--c:${s.color}"><i>${s.id}</i></span>`).join('')}
+          <u id="ribbonPin"></u>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="inspector" aria-label="Inspector">
+    <section class="card part" id="partCard"></section>
+    <section class="card"><h2 class="cap">Live</h2>
+      <div class="read">
+        <div><small>Power</small><b id="rPower">0</b><i>kW</i></div>
+        <div><small>Torque</small><b id="rTorque">0</b><i>Nm</i></div>
+        <div><small>Peak pressure</small><b id="rPeak">0</b><i>bar</i></div>
+        <div><small>BMEP</small><b id="rBmep">0</b><i>bar</i></div>
+        <div><small>Boost</small><b id="rBoost">0</b><i>bar</i></div>
+        <div><small>Efficiency</small><b id="rEff">0</b><i>%</i></div>
+        <div><small>Coolant</small><b id="rCool">0</b><i>°C</i></div>
+        <div><small>Exhaust</small><b id="rExh">0</b><i>°C</i></div>
+      </div>
+      <div class="knock"><small>Knock risk</small><span class="meter"><i id="knockBar"></i></span></div>
+    </section>
+    <section class="card"><h2 class="cap">Drive</h2>
+      <label class="slide"><span>Throttle</span><output id="oThrottle"></output><input id="throttle" type="range" min="0" max="100"></label>
+      <label class="slide"><span>Load</span><output id="oLoad"></output><input id="load" type="range" min="0" max="100"></label>
+      <label class="slide"><span id="advLabel">Ignition advance</span><output id="oAdv"></output><input id="advance" type="range" min="0" max="35"></label>
+    </section>
+    <section class="card"><h2 class="cap">Specification</h2><dl id="specs" class="specs"></dl></section>
+  </aside>
+</section>
+
+<section class="panel charts" aria-label="Cylinder traces">
+  <header><div><h2 class="cap">Cylinder 1</h2><h3>What the gas is doing</h3></div><p class="note">Drag the crank ribbon to scrub through the cycle.</p></header>
+  <div class="chartGrid">
+    <figure><figcaption><b>Pressure vs crank angle</b><span><i class="k" style="--c:#2f7fe0"></i>intake valve <i class="k" style="--c:#7b848d"></i>exhaust valve</span></figcaption><canvas id="cvP" role="img" aria-label="Cylinder pressure against crank angle"></canvas></figure>
+    <figure><figcaption><b>Pressure vs volume</b><span>work = enclosed area</span></figcaption><canvas id="cvPV" role="img" aria-label="Pressure volume loop"></canvas></figure>
+  </div>
+  <div class="strokeKey">${STROKES.map((s) => `<span><i class="k" style="--c:${s.color}"></i>${s.id}</span>`).join('')}</div>
+</section>
+
+<section class="panel dyno" aria-label="Dyno">
+  <header><div><h2 class="cap">Dyno</h2><h3>Full-throttle pull</h3></div>
+    <div class="dynoBtns"><button id="dynoStart" class="solid">Run pull</button><button id="dynoClear" class="ghost">Clear</button></div></header>
+  <div class="dynoBody"><canvas id="cvDyno" role="img" aria-label="Torque and power against rpm"></canvas>
+    <div class="dynoStats"><div><small>Peak torque</small><b id="dPT">—</b></div><div><small>Peak power</small><b id="dPP">—</b></div><div><small>Status</small><span id="dStatus">Ready</span></div>
+    <p class="note"><i class="k" style="--c:var(--accent)"></i>Torque (solid) · power (dashed). Uses the Load slider as brake load.</p></div></div>
+</section>`;
+
+// ---------------------------------------------------------------------------------------------------- stage
+const viewport = $('#viewport');
+const callout = createCallout(viewport);
+const stage = createStage(viewport, {
+  onPick: (name) => select(name, { list: true }),
+  onHover: (name, e) => { callout.hover(name, e); viewport.style.cursor = name ? 'pointer' : ''; },
+});
+
+function applyState() {
+  const eng = stage.eng; if (!eng) return;
+  eng.applyFilter({ system: state.system, isolate: state.isolate ? state.selected : null });
 }
-function build(){
- eng=buildEngine(ENGINES[state.engine]);scene.add(eng.root);parts=eng.parts;
- const c=eng.bounds.center,sz=eng.bounds.size,d=Math.max(sz.x,sz.y*1.25)*1.85;
- home.target.set(c.x,c.y-.5,c.z);home.cam.set(c.x+d*.62,c.y+d*.42,c.z+d*.92);
- focusTarget.copy(home.target);focusCamera.copy(home.cam);focusAnimating=false;
- camera.position.copy(home.cam);controls.target.copy(home.target);controls.update();controls.saveState();
- updateVisibility();select(state.selected,false)
+
+function loadEngine(id) {
+  state.engine = id;
+  const s = spec();
+  physics = new EnginePhysics(id);
+  state.rpm = s.idleRpm; state.cycle = 0; state.running = false; state.preset = null;
+  dyno.running = false; dyno.points = [];
+  physics.throttle = state.throttle / 100; physics.load = state.load / 100; physics.rpm = state.rpm; physics.sparkAdvance = state.advance;
+  stage.setEngine(s);
+  const names = new Set(partsFor(s).map((p) => p.name));
+  if (!names.has(state.selected)) state.selected = 'Piston';
+  $('#engName').textContent = s.name; $('#engSub').textContent = s.sub;
+  $('#dial').innerHTML = tachMarkup(s.redline);
+  $('#advLabel').textContent = s.fuel === 'diesel' ? 'Injection advance' : 'Ignition advance';
+  renderEngineList(); renderSpecs(); renderParts(); syncControls(); syncToggles();
+  applyState(); select(state.selected, { silent: true });
+  $('#dynoStart').textContent = 'Run pull'; drawDyno();
 }
-function updateVisibility(){eng&&eng.applyFilter({system:state.system,isolate:state.isolate?state.selected:null})}
-function highlight(name){eng&&eng.highlight(name)}
-function select(name,focus=true){
- state.selected=name;highlight(name);document.querySelectorAll('.partRow').forEach(x=>x.classList.toggle('selected',x.dataset.part===name));
- const d=document.querySelector('#detail');if(d)d.innerHTML=`<span class="detailLabel">${info[name]?.system||'ENGINE'} · COMPONENT</span><h3>${name}</h3><p>${info[name]?.desc||'Mechanical component in the engine assembly.'}</p><div class="chips"><span>3D SELECTABLE</span><span>INTERACTIVE</span></div>`;
- if(focus){const o=parts.find(x=>x.userData.part===name);if(o){focusTarget.copy(o.getWorldPosition(new THREE.Vector3()));const offset=new THREE.Vector3(8,5,12);focusCamera.copy(focusTarget).add(offset);focusAnimating=true;}}
+
+// ---------------------------------------------------------------------------------------------------- rail
+function renderEngineList() {
+  $('#engineList').innerHTML = Object.values(ENGINES).map((e) =>
+    `<button data-engine="${e.id}" aria-pressed="${e.id === state.engine}"><b>${esc(e.short)}</b><span>${esc(e.name)}<small>${esc(e.sub)}</small></span></button>`).join('');
+  const chips = ['All', ...SYSTEMS.map((s) => s.id)];
+  $('#chips').innerHTML = chips.map((c) =>
+    `<button data-system="${esc(c)}" aria-pressed="${c === state.system}" style="--c:${SYSTEM_COLOR[c] || 'var(--ink)'}"><i></i>${esc(c)}</button>`).join('');
 }
-function pointer(e){const r=renderer.domElement.getBoundingClientRect();mouse.x=(e.clientX-r.left)/r.width*2-1;mouse.y=-(e.clientY-r.top)/r.height*2+1}
-function pick(){raycaster.setFromCamera(mouse,camera);const h=raycaster.intersectObjects(parts,true)[0];if(h){let o=h.object;while(o&&!o.userData.part)o=o.parent;if(o?.userData.part){select(o.userData.part);document.querySelectorAll('.partRow').forEach(x=>x.classList.toggle('selected',x.dataset.part===state.selected))}}}
-function resize(){if(!renderer)return;const el=document.querySelector('#viewport');if(!el||!el.clientWidth||!el.clientHeight)return;camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix();renderer.setSize(el.clientWidth,el.clientHeight,false)}
-function loop(now){
- requestAnimationFrame(loop);
- const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;
- if(state.running){physics.throttle=state.throttle/100;physics.load=state.load/100;const snap=physics.step(dt);state.rpm=snap.rpm;state.cycle=snap.theta;}else{physics.theta=state.cycle;physics.rpm=state.rpm;}
- eng&&eng.update({theta:state.cycle,physics,dt,explode:state.explode,cutaway:state.cutaway,xray:state.xray});
-if(dyno.running){
-  dyno.elapsed+=dt;dyno.lastSample+=dt;
-  if(dyno.lastSample>=.12){
-    dyno.lastSample=0;
-    const rpm=Math.round(physics.rpm/100)*100,prev=dyno.points[dyno.points.length-1];
-    if(!prev||rpm>prev.rpm+70){
-      const torque=Math.max(0,physics.torque),power=torque*rpm*2*Math.PI/60/1000;
-      dyno.points.push({rpm,torque,power});
-      dyno.peakTorque=Math.max(dyno.peakTorque,torque);dyno.peakPower=Math.max(dyno.peakPower,power);
-      drawDyno();
+function visibleParts() {
+  const q = state.search.trim().toLowerCase();
+  return partsFor(spec()).filter((p) => (state.system === 'All' || p.system === state.system) && (!q || `${p.name} ${p.system} ${p.desc}`.toLowerCase().includes(q)));
+}
+function renderParts() {
+  const list = visibleParts(), eng = stage.eng;
+  $('#partCount').textContent = `${list.length} part${list.length === 1 ? '' : 's'}`;
+  $('#partList').innerHTML = list.map((p) => {
+    const modelled = !eng || eng.has(p.name);
+    return `<li><button data-part="${esc(p.name)}" class="${p.name === state.selected ? 'sel' : ''}${modelled ? '' : ' flat'}" style="--c:${SYSTEM_COLOR[p.system]}"><i></i><span>${esc(p.name)}</span>${modelled ? '' : '<em>ref</em>'}</button></li>`;
+  }).join('') || '<li class="empty">No parts match.</li>';
+}
+function renderSpecs() {
+  const s = spec(), disp = ((Math.PI / 4) * s.bore * s.bore * s.stroke * s.cylinders * 1000).toFixed(2);
+  const rows = [
+    ['Layout', s.layout === 'v' ? `${s.vAngle || 60}° V${s.cylinders}` : s.layout === 'inline' ? `Inline-${s.cylinders}` : s.layout],
+    ['Displacement', `${disp} L`], ['Bore × stroke', `${(s.bore * 1000).toFixed(0)} × ${(s.stroke * 1000).toFixed(0)} mm`],
+    ['Compression', `${s.compression}:1`], ['Valves', `${s.valvesPerCylinder * s.cylinders}`], ['Redline', `${s.redline.toLocaleString('en-US')} rpm`],
+    ['Firing order', s.firingOrder.join('–')], ['Fuel', s.fuel === 'diesel' ? 'Diesel · turbo' : 'Petrol'],
+  ];
+  $('#specs').innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+}
+
+// ---------------------------------------------------------------------------------------------------- selection
+function select(name, { list = false, silent = false, focus = false } = {}) {
+  state.selected = name;
+  const info = PART_INFO[name] || { system: 'Engine', desc: '' };
+  const color = SYSTEM_COLOR[info.system] || '#6f7b86';
+  const eng = stage.eng, modelled = !eng || eng.has(name);
+  eng?.highlight(name, parseInt(color.slice(1), 16), 0.5);
+  if (state.isolate) applyState();
+  $('#partCard').innerHTML = `<span class="sysTag" style="--c:${color}"><i></i>${esc(info.system)}</span><h2>${esc(name)}</h2><p>${esc(info.desc)}</p>
+    ${modelled ? '' : '<p class="flatNote">Shown for reference — this engine has no modelled part of this kind.</p>'}`;
+  callout.set(modelled ? { name, system: info.system, color, hint: '' } : null);
+  $$('#partList button').forEach((b) => b.classList.toggle('sel', b.dataset.part === name));
+  if (focus || list) stage.focusPart(name);
+  if (!silent && list) $(`#partList button[data-part="${CSS.escape(name)}"]`)?.scrollIntoView({ block: 'nearest' });
+}
+
+// ---------------------------------------------------------------------------------------------------- controls
+function syncControls() {
+  $('#throttle').value = state.throttle; $('#load').value = state.load; $('#advance').value = state.advance;
+  $('#oThrottle').textContent = state.throttle + '%'; $('#oLoad').textContent = state.load + '%'; $('#oAdv').textContent = state.advance + '°';
+  $$('[data-preset]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.preset === state.preset));
+  const play = $('#play'); play.dataset.on = state.running; play.setAttribute('aria-label', state.running ? 'Pause engine' : 'Start engine');
+}
+function syncToggles() {
+  for (const k of ['explode', 'cutaway', 'xray', 'isolate']) $(`[data-tool="${k}"]`).setAttribute('aria-pressed', state[k]);
+}
+function setDrive(throttle, load) {
+  state.throttle = throttle; state.load = load; physics.throttle = throttle / 100; physics.load = load / 100; syncControls();
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.tab) return setTab(t.dataset.tab);
+  if (t.dataset.engine && $('#engineTab').contains(t)) return loadEngine(t.dataset.engine);
+  if (t.dataset.system) { state.system = t.dataset.system; $$('#chips button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.system === state.system)); applyState(); return renderParts(); }
+  if (t.dataset.part) return select(t.dataset.part, { focus: true });
+  if (t.dataset.view) { $$('[data-view]').forEach((b) => b.classList.toggle('on', b === t)); return stage.view(t.dataset.view); }
+  if (t.dataset.tool) {
+    const k = t.dataset.tool; state[k] = !state[k]; syncToggles(); applyState();
+    if (k === 'explode') stage.dolly(state.explode ? 1.3 : 1 / 1.3, state.explode ? 2.2 : -2.2);
+    return;
+  }
+  if (t.dataset.preset) { const p = PRESETS[t.dataset.preset]; state.preset = t.dataset.preset; setDrive(p.throttle, p.load); state.running = true; return syncControls(); }
+  if (t.id === 'play') { state.running = !state.running; return syncControls(); }
+  if (t.id === 'resetBtn') {
+    Object.assign(state, { explode: false, cutaway: false, xray: false, isolate: false, system: 'All', search: '', throttle: 18, load: 25, advance: 12 });
+    $('#search').value = ''; stage.goHome(); $$('[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === 'iso'));
+    return loadEngine(state.engine);
+  }
+  if (t.id === 'dynoStart') return toggleDyno();
+  if (t.id === 'dynoClear') { dyno.running = false; dyno.points = []; $('#dynoStart').textContent = 'Run pull'; return drawDyno(); }
+});
+$('#throttle').oninput = (e) => { state.preset = null; setDrive(+e.target.value, state.load); };
+$('#load').oninput = (e) => { state.preset = null; setDrive(state.throttle, +e.target.value); };
+$('#advance').oninput = (e) => { state.advance = +e.target.value; physics.sparkAdvance = state.advance; syncControls(); };
+
+// Crank ribbon: pointer-down scrubs immediately and tracks the pointer 1:1.
+const ribbon = $('#ribbon');
+function scrub(e) { const r = ribbon.getBoundingClientRect(); state.cycle = Math.max(0, Math.min(719.9, ((e.clientX - r.left) / r.width) * 720)); }
+ribbon.addEventListener('pointerdown', (e) => { ribbon.setPointerCapture(e.pointerId); state.running = false; syncControls(); scrub(e); ribbon.classList.add('drag'); });
+ribbon.addEventListener('pointermove', (e) => { if (ribbon.hasPointerCapture(e.pointerId)) scrub(e); });
+ribbon.addEventListener('pointerup', () => ribbon.classList.remove('drag'));
+ribbon.addEventListener('keydown', (e) => {
+  const d = { ArrowRight: 5, ArrowLeft: -5, PageUp: 45, PageDown: -45 }[e.key]; if (!d) return;
+  e.preventDefault(); state.running = false; syncControls(); state.cycle = (state.cycle + d + 720) % 720;
+});
+
+$('#search').addEventListener('input', (e) => { state.search = e.target.value; if (state.tab !== 'engine') setTab('engine'); renderParts(); });
+document.addEventListener('keydown', (e) => {
+  const typing = /input|textarea/i.test(document.activeElement?.tagName);
+  if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) { e.preventDefault(); $('#search').focus(); }
+  if (e.key === ' ' && !typing && state.tab === 'engine' && !/button|a/i.test(document.activeElement?.tagName)) { e.preventDefault(); state.running = !state.running; syncControls(); }
+});
+
+function setTab(t) {
+  state.tab = t;
+  $$('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t));
+  for (const id of ['engine', 'learn', 'compare']) $(`#${id}Tab`).hidden = id !== t;
+  if (t === 'learn') learn.show();
+  if (t === 'compare') compare.show();
+  if (t === 'engine') { stage.resize(); drawCharts(); drawDyno(); }
+  scrollTo({ top: 0 });
+}
+
+// ---------------------------------------------------------------------------------------------------- dyno
+function toggleDyno() {
+  dyno.running = !dyno.running;
+  if (dyno.running) {
+    Object.assign(dyno, { points: [], elapsed: 0, last: 0 }); state.preset = null;
+    physics.rpm = Math.max(physics.rpm, spec().idleRpm); state.rpm = physics.rpm;
+    setDrive(100, state.load); state.running = true;
+  }
+  $('#dynoStart').textContent = dyno.running ? 'Stop' : 'Run pull'; drawDyno();
+}
+function dynoTick(dt) {
+  dyno.elapsed += dt; dyno.last += dt;
+  if (dyno.last >= 0.1) {
+    dyno.last = 0;
+    const rpm = Math.round(physics.rpm / 100) * 100, prev = dyno.points.at(-1);
+    if (!prev || rpm > prev.rpm + 70) {
+      const torque = Math.max(0, physics.torque);
+      dyno.points.push({ rpm, torque, power: (torque * rpm * 2 * Math.PI) / 60000 });
     }
   }
-  if(physics.rpm>=physics.spec.redline-30||dyno.elapsed>22){dyno.running=false;const btn=document.querySelector('#dynoStart');if(btn)btn.textContent='▶ RUN DYNO PULL';requestRenderMeta();drawDyno();}
+  if (physics.rpm >= spec().redline - 30 || dyno.elapsed > 25) { dyno.running = false; $('#dynoStart').textContent = 'Run pull'; }
 }
- if(controls){if(focusAnimating){controls.target.lerp(focusTarget,.12);camera.position.lerp(focusCamera,.08);if(camera.position.distanceTo(focusCamera)<.08&&controls.target.distanceTo(focusTarget)<.08)focusAnimating=false;}controls.update();}
- renderer?.render(scene,camera);plotClock+=dt;if(plotClock>.3){plotClock=0;requestRenderMeta();drawInstrumentation();}
+function drawDyno() {
+  const pts = dyno.points, cv = $('#cvDyno');
+  if (pts.length > 1) drawCurves(cv, [{ color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#d9472b', points: pts }], { redline: spec().redline });
+  else drawCurves(cv, [{ color: '#d9472b', points: [{ rpm: 0, torque: 0, power: 0 }, { rpm: spec().redline, torque: 0, power: 0 }] }], { redline: spec().redline });
+  const pt = Math.max(0, ...pts.map((p) => p.torque)), pp = Math.max(0, ...pts.map((p) => p.power));
+  $('#dPT').textContent = pts.length ? `${pt.toFixed(0)} Nm` : '—'; $('#dPP').textContent = pts.length ? `${pp.toFixed(0)} kW` : '—';
+  $('#dStatus').textContent = dyno.running ? 'Pulling…' : pts.length ? 'Complete · modelled' : 'Ready';
 }
-function requestRenderMeta(){const phase=document.querySelector('#cyclePhase');if(phase){const a=((state.cycle%720)+720)%720;phase.textContent=a<180?'INTAKE':a<360?'COMPRESSION':a<540?'POWER':'EXHAUST';}const status=document.querySelector('#engineStatus');if(status)status.textContent=state.running?'ENGINE RUNNING · LIVE PHYSICS':'SIMULATION READY · 4-STROKE';const play=document.querySelector('#play');if(play){play.textContent=state.running?'Ⅱ':'▶';play.setAttribute('aria-label',state.running?'Pause engine':'Start engine');}const deg=document.querySelector('#cycleDeg');if(deg)deg.textContent=Math.round(state.cycle)+'°';const bar=document.querySelector('#cycleBar');if(bar)bar.style.width=state.cycle/7.2+'%';const set=(id,v)=>{const e=document.querySelector(id);if(e)e.textContent=v};set('#teleRPM',Math.round(physics.rpm));set('#teleTorque',Math.round(physics.torque)+' Nm');set('#telePower',physics.power.toFixed(1)+' kW');set('#telePressure',physics.pressure.toFixed(1)+' bar');set('#teleBoost',(physics.boost||0).toFixed(2)+' bar');set('#teleTemp',Math.round(physics.temperature)+'°C');set('#teleOil',Math.round(physics.oil||95)+'°C');set('#teleExhaust',Math.round(physics.exhaustTemp||280)+'°C');set('#teleEff',(physics.efficiency||0).toFixed(1)+'%');set('#teleKnock',(physics.knock||0).toFixed(1)+'%');set('#readIMEP',(physics.imep||0).toFixed(1)+' bar');set('#readBMEP',(physics.bmep||0).toFixed(1)+' bar');set('#readAFR',physics.spec.afr.toFixed(1));set('#readFlow',(physics.intakeFlow||0).toFixed(1)+' g/s')}
 
-function drawChart(id,values,maxValue,label,color='#48e6ff'){const cv=document.querySelector('#'+id);if(!cv||!values?.length)return;const d=Math.min(window.devicePixelRatio||1,2),w=Math.max(cv.clientWidth,300),h=Math.max(cv.clientHeight,145);cv.width=Math.round(w*d);cv.height=Math.round(h*d);const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);x.font='10px DM Sans,Arial';x.fillStyle='rgba(157,169,198,.75)';for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,i*h/4);x.lineTo(w,i*h/4);x.strokeStyle='rgba(157,169,198,.12)';x.lineWidth=1;x.stroke()}const pts=values.map((v,i)=>[i/(values.length-1||1)*w,h-10-(Math.max(0,Math.min(v,maxValue))/Math.max(maxValue,1))*(h-22)]);x.beginPath();pts.forEach(([px,py],i)=>i?x.lineTo(px,py):x.moveTo(px,py));x.lineTo(w,h-10);x.lineTo(0,h-10);x.closePath();const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,color+'55');g.addColorStop(1,color+'00');x.fillStyle=g;x.fill();x.beginPath();pts.forEach(([px,py],i)=>i?x.lineTo(px,py):x.moveTo(px,py));x.strokeStyle=color;x.lineWidth=2.5;x.lineJoin='round';x.lineCap='round';x.stroke();x.fillStyle=color;x.fillText(label,8,14)}
-function drawDyno(){
- const cv=document.querySelector('#dynoPlot');if(!cv)return;
- const d=Math.min(window.devicePixelRatio||1,2),w=Math.max(cv.clientWidth,320),h=Math.max(cv.clientHeight,180);
- cv.width=Math.round(w*d);cv.height=Math.round(h*d);const c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);
- c.fillStyle='rgba(9,15,29,.35)';c.fillRect(0,0,w,h);c.font='10px DM Sans,Arial';c.fillStyle='rgba(157,169,198,.8)';
- for(let i=1;i<5;i++){const y=i*h/5;c.beginPath();c.moveTo(32,y);c.lineTo(w-12,y);c.strokeStyle='rgba(157,169,198,.14)';c.stroke();}
- for(let i=1;i<5;i++){const x=32+i*(w-44)/5;c.beginPath();c.moveTo(x,8);c.lineTo(x,h-22);c.strokeStyle='rgba(157,169,198,.09)';c.stroke();}
- const maxRpm=physics.spec.redline,maxT=Math.max(30,...dyno.points.map(p=>p.torque))*1.15,maxP=Math.max(10,...dyno.points.map(p=>p.power))*1.15;
- const draw=(key,max,color)=>{if(dyno.points.length<2)return;c.beginPath();dyno.points.forEach((p,i)=>{const x=32+(p.rpm/maxRpm)*(w-44),y=h-22-(p[key]/max)*(h-34);i?c.lineTo(x,y):c.moveTo(x,y)});c.strokeStyle=color;c.lineWidth=2.5;c.lineJoin='round';c.stroke();};
- draw('torque',maxT,'#48e6ff');draw('power',maxP,'#ffad5a');
- c.fillStyle='#48e6ff';c.fillText('TORQUE',36,14);c.fillStyle='#ffad5a';c.fillText('POWER',104,14);
- c.fillStyle='rgba(157,169,198,.8)';c.fillText('0',18,h-9);c.fillText(Math.round(maxRpm),w-50,h-9);
- const set=(id,v)=>{const e=document.querySelector(id);if(e)e.textContent=v};
- set('#dynoPeakTorque',dyno.points.length?dyno.peakTorque.toFixed(1)+' Nm':'— Nm');
- set('#dynoPeakPower',dyno.points.length?dyno.peakPower.toFixed(1)+' kW':'— kW');
- set('#dynoLiveRpm',Math.round(physics.rpm).toLocaleString());
- set('#dynoStatus',dyno.running?'PULL IN PROGRESS':dyno.points.length?'Pull complete · modelled data':'Ready for a pull');
+// ---------------------------------------------------------------------------------------------------- frame loop
+const num = (id, v) => { const e = document.getElementById(id); if (e && e.textContent !== v) e.textContent = v; };
+function drawCharts() { drawPressure($('#cvP'), physics, state.cycle); drawPV($('#cvPV'), physics, state.cycle); }
+function readouts() {
+  const p = physics;
+  num('rPower', p.power.toFixed(1)); num('rTorque', Math.round(p.torque)); num('rPeak', p.pressure.toFixed(0)); num('rBmep', (p.bmep || 0).toFixed(1));
+  num('rBoost', (p.boost || 0).toFixed(2)); num('rEff', ((p.efficiency || 0) * 100).toFixed(0)); num('rCool', Math.round(p.temperature)); num('rExh', Math.round(p.exhaustTemp));
+  $('#knockBar').style.width = Math.min(100, (p.knock || 0) * 100) + '%';
+  const st = strokeAt(state.cycle);
+  num('phaseName', st.id); $('#phaseName').style.color = st.color; num('degNum', String(Math.round(state.cycle)));
+  $('#ribbonPin').style.left = (state.cycle / 720) * 100 + '%'; ribbon.setAttribute('aria-valuenow', Math.round(state.cycle));
 }
-function drawInstrumentation(){if(!physics)return;const pressure=[],torque=[],piston=[];for(let a=0;a<=720;a+=30){pressure.push(physics.cylinderPressure(a,physics.throttle)/1e5);const q=physics.cylinderWorkTorque(a);torque.push(Math.max(0,q.torque));piston.push(physics.pistonPosition(a*Math.PI/180)*1000)}drawChart('pressurePlot',pressure,Math.max(20,...pressure),'bar','#48e6ff');drawChart('torquePlot',torque,Math.max(20,...torque),'Nm','#ffad5a');drawChart('pistonPlot',piston,Math.max(90,...piston),'mm','#9b7cff');history.rpm.push(physics.rpm);history.torque.push(physics.torque);history.temp.push(physics.temperature);[history.rpm,history.torque,history.temp].forEach(a=>{if(a.length>80)a.shift()});const cv=document.querySelector('#trendPlot');if(cv){const w=cv.clientWidth||500,h=cv.clientHeight||150,d=Math.min(devicePixelRatio||1,2);cv.width=Math.round(w*d);cv.height=Math.round(h*d);const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);const draw=(arr,max)=>{x.beginPath();arr.forEach((v,i)=>{const px=i/(79)*w,py=h-6-Math.max(0,Math.min(v/max,1))*(h-12);i?x.lineTo(px,py):x.moveTo(px,py)});x.strokeStyle='#30332f';x.lineWidth=2;x.stroke()};draw(history.rpm,physics.spec.redline);draw(history.temp,180)}const set=(id,v)=>{const e=document.querySelector(id.startsWith('#')?id:'#'+id);if(e)e.textContent=v};set('#readIMEP',(physics.imep||0).toFixed(1)+' bar');set('#readBMEP',(physics.bmep||0).toFixed(1)+' bar');set('#readAFR',physics.spec.afr.toFixed(1));set('#readFlow',(physics.intakeFlow||0).toFixed(1)+' g/s')}
-function renderLibrary(){
- const systems=['All',...new Set(catalog.map(x=>x[0]))],q=state.search.toLowerCase();
- const list=catalog.filter(x=>(state.system==='All'||x[0]===state.system)&&(`${x[0]} ${x[1]} ${x[2]}`.toLowerCase().includes(q)));
- document.querySelector('#workspace').innerHTML=`
- <div class="atlasGrid"><aside class="library panel"><div class="panelTitle"><div><span class="eyebrow">ENGINE LIBRARY</span><h2>Choose a machine</h2></div><span class="count">04</span></div>
- <div class="engineList">${Object.entries(engines).map(([id,e])=>`<button class="engineCard ${id===state.engine?'selected':''}" data-engine="${id}"><span class="engineIcon">◎</span><div><b>${e.name}</b><small>${e.sub}</small></div><i>↗</i></button>`).join('')}</div>
- <div class="catalogHead"><span class="eyebrow">SYSTEMS</span><button id="clear">CLEAR</button></div><div class="systemList">${systems.map(s=>`<button class="systemBtn ${s===state.system?'active':''}" data-system="${s}"><span class="dot"></span>${s}<small>${s==='All'?catalog.length:catalog.filter(x=>x[0]===s).length}</small></button>`).join('')}</div></aside>
- <section class="viewer panel"><div class="viewerHead"><div><span class="eyebrow">LIVE 3D ASSEMBLY</span><h2>${engines[state.engine].name}</h2><small>Orbit · zoom · click any component</small></div><div class="actions"><button data-view="front">FRONT</button><button data-view="side">SIDE</button><button data-view="top">TOP</button><button id="explodeBtn">${state.explode?'ASSEMBLE':'EXPLODE'}</button><button id="cutBtn">${state.cutaway?'SOLID':'CUTAWAY'}</button><button id="isoBtn">${state.isolate?'SHOW ALL':'ISOLATE'}</button><button id="reset">RESET</button></div></div>
- <div id="viewport" class="viewport"><div class="hud"><b>PIECES // ENGINE LAB</b><span id="engineStatus">SIMULATION READY · 4-STROKE</span></div><div class="simPresets"><span>DRIVE MODE</span><button data-preset="idle">IDLE</button><button data-preset="road">ROAD</button><button data-preset="power">POWER</button></div><div class="telemetry"><div><span>RPM</span><b id="teleRPM">${Math.round(state.rpm)}</b></div><div><span>TORQUE</span><b id="teleTorque">0 Nm</b></div><div><span>POWER</span><b id="telePower">0 kW</b></div><div><span>CYL. PRESSURE</span><b id="telePressure">1 bar</b></div><div><span>BOOST</span><b id="teleBoost">0.00 bar</b></div><div><span>COOLANT</span><b id="teleTemp">90°C</b></div><div><span>OIL</span><b id="teleOil">95°C</b></div><div><span>EXHAUST</span><b id="teleExhaust">280°C</b></div><div><span>EFFICIENCY</span><b id="teleEff">0%</b></div><div><span>KNOCK</span><b id="teleKnock">0%</b></div></div><div class="cycle"><span>4-STROKE CYCLE</span><small id="cyclePhase">INTAKE</small><b id="cycleDeg">${Math.round(state.cycle)}°</b><div class="cycleBar"><i id="cycleBar" style="width:${state.cycle/7.2}%"></i></div><button id="play" aria-label="${state.running?'Pause engine':'Start engine'}">${state.running?'Ⅱ':'▶'}</button></div><div class="physicsControls"><label>THROTTLE <input id="throttle" type="range" min="0" max="100" value="${state.throttle}"><b id="throttleVal">${state.throttle}%</b></label><label>LOAD <input id="load" type="range" min="0" max="100" value="${state.load}"><b id="loadVal">${state.load}%</b></label><label>IGNITION <input id="advance" type="range" min="0" max="35" value="${physics.sparkAdvance||12}"><b id="advanceVal">${physics.sparkAdvance||12}°</b></label></div></div>
- <div id="detail" class="detail"></div></section></div><div class="instrumentation panel"><div class="panelTitle"><div><span class="eyebrow">LIVE INSTRUMENTATION</span><h2>Engine traces</h2></div><span class="subtle">Reduced-order physics · 0–720° cycle</span></div><div class="plotGrid"><article class="plotCard"><div><b>CYLINDER PRESSURE</b><small>bar vs crank angle</small></div><canvas id="pressurePlot"></canvas></article><article class="plotCard"><div><b>TORQUE PULSE</b><small>Nm vs crank angle</small></div><canvas id="torquePlot"></canvas></article><article class="plotCard"><div><b>PISTON MOTION</b><small>position vs crank angle</small></div><canvas id="pistonPlot"></canvas></article><article class="plotCard"><div><b>LIVE TREND</b><small>RPM / temperature</small></div><canvas id="trendPlot"></canvas></article></div><div class="physicsReadout"><span>IMEP <b id="readIMEP">0 bar</b></span><span>BMEP <b id="readBMEP">0 bar</b></span><span>AFR <b id="readAFR">14.7</b></span><span>INTAKE FLOW <b id="readFlow">0 g/s</b></span></div></div>
- <section class="dyno panel"><div class="panelTitle"><div><span class="eyebrow">CHASSIS DYNO · MODELLED SWEEP</span><h2>Power & torque curve</h2></div><span id="dynoStatus" class="subtle">Ready for a pull</span></div>
- <div class="dynoLayout"><div class="dynoPlotWrap"><canvas id="dynoPlot"></canvas><div class="dynoAxis"><span>LOW RPM</span><span>ENGINE SPEED →</span><span>REDLINE</span></div></div>
- <div class="dynoSide"><div class="dynoMetrics"><div><span>PEAK TORQUE</span><b id="dynoPeakTorque">— <small>Nm</small></b></div><div><span>PEAK POWER</span><b id="dynoPeakPower">— <small>kW</small></b></div><div><span>LIVE RPM</span><b id="dynoLiveRpm">900</b></div></div>
- <label class="dynoLoadLabel">DYNO BRAKE LOAD <input id="dynoLoad" type="range" min="5" max="85" value="20"><b id="dynoLoadValue">20%</b></label>
- <div class="dynoButtons"><button id="dynoStart">▶ RUN DYNO PULL</button><button id="dynoClear">CLEAR TRACE</button></div>
- <p class="dynoNote">Educational reduced-order model, not a calibrated real-world dynamometer. Hold load steady and compare engine configurations.</p></div></div></section>
- <section class="catalog panel"><div class="panelTitle"><div><span class="eyebrow">COMPONENT CATALOGUE</span><h2>${list.length} parts in view</h2></div><span class="subtle">Click a part to inspect it</span></div><div class="partsGrid">${list.map((x,i)=>`<button class="partRow ${x[1]===state.selected?'selected':''}" data-part="${x[1]}"><span class="num">${String(i+1).padStart(2,'0')}</span><span><b>${x[1]}</b><small>${x[2]}</small></span><em>${x[0]}</em></button>`).join('')}</div></section>`;
- bindLibrary();init3D()
+
+let last = performance.now(), slow = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.04, Math.max(0, (now - last) / 1000)); last = now;
+  if (state.tab !== 'engine') return;
+  if (state.running) { const s = physics.step(dt); state.rpm = s.rpm; state.cycle = s.theta; if (dyno.running) dynoTick(dt); }
+  else { physics.theta = state.cycle; physics.rpm = state.rpm; }
+  const eng = stage.eng;
+  eng?.update({ theta: state.cycle, physics, dt, explode: state.explode, cutaway: state.cutaway, xray: state.xray });
+  stage.render();
+  const pos = eng && state.selected ? eng.anchorOf(state.selected, stage.camera) : null;
+  callout.place(pos ? stage.project(pos) : null);
+  tachUpdate($('#dial'), physics.rpm);
+  slow += dt;
+  if (slow > 0.08) { slow = 0; readouts(); drawCharts(); if (dyno.running || dyno.points.length) drawDyno(); }
 }
-function refreshCatalog(){
- const q=state.search.toLowerCase();
- const list=catalog.filter(x=>(state.system==='All'||x[0]===state.system)&&(`${x[0]} ${x[1]} ${x[2]}`.toLowerCase().includes(q)));
- const title=document.querySelector('.catalog .panelTitle h2');if(title)title.textContent=`${list.length} parts in view`;
- const grid=document.querySelector('.catalog .partsGrid');if(grid)grid.innerHTML=list.map((x,i)=>`<button class="partRow ${x[1]===state.selected?'selected':''}" data-part="${x[1]}"><span class="num">${String(i+1).padStart(2,'0')}</span><span><b>${x[1]}</b><small>${x[2]}</small></span><em>${x[0]}</em></button>`).join('');
- document.querySelectorAll('.partRow').forEach(b=>b.onclick=()=>select(b.dataset.part));
+
+const learn = mountLearn($('#learnTab'), { openSystem: (id) => { state.system = id; state.search = ''; $('#search').value = ''; setTab('engine'); renderEngineList(); applyState(); renderParts(); } });
+const compare = mountCompare($('#compareTab'), { ENGINES, pick: (id) => { setTab('engine'); loadEngine(id); } });
+loadEngine(state.engine);
+requestAnimationFrame(frame);
+if (new URLSearchParams(location.search).has('debug')) {
+  window.__pieces = { state, get eng() { return stage.eng; }, get camera() { return stage.camera; }, get controls() { return stage.controls; }, get physics() { return physics; }, stage };
 }
-function bindLibrary(){
- document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(!camera||!controls)return;const target=controls.target.clone();const offsets={front:new THREE.Vector3(0,4,44),side:new THREE.Vector3(44,4,0),top:new THREE.Vector3(0,48,.01)};focusTarget.copy(target);focusCamera.copy(target).add(offsets[b.dataset.view]);focusAnimating=true;});
- document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{const presets={idle:{throttle:18,load:8},road:{throttle:42,load:32},power:{throttle:92,load:12}};const p=presets[b.dataset.preset];state.throttle=p.throttle;state.load=p.load;physics.throttle=p.throttle/100;physics.load=p.load/100;document.querySelector('#throttle').value=p.throttle;document.querySelector('#load').value=p.load;document.querySelector('#throttleVal').textContent=p.throttle+'%';document.querySelector('#loadVal').textContent=p.load+'%';document.querySelectorAll('[data-preset]').forEach(x=>x.classList.toggle('active',x===b));if(!state.running){state.running=true;}requestRenderMeta();});
- document.querySelectorAll('[data-engine]').forEach(b=>b.onclick=()=>{state.engine=b.dataset.engine;state.selected='Piston';renderLibrary()});
- document.querySelectorAll('[data-system]').forEach(b=>b.onclick=()=>{state.system=b.dataset.system;document.querySelectorAll('[data-system]').forEach(x=>x.classList.toggle('active',x.dataset.system===state.system));updateVisibility();refreshCatalog()});
- document.querySelectorAll('.partRow').forEach(b=>b.onclick=()=>select(b.dataset.part));
- document.querySelector('#explodeBtn').onclick=()=>{state.explode=!state.explode;{const off=camera.position.clone().sub(controls.target).multiplyScalar(state.explode?1.3:1/1.3);focusTarget.copy(controls.target);focusTarget.y+=state.explode?2.2:-2.2;focusCamera.copy(focusTarget).add(off);focusAnimating=true}document.querySelector('#explodeBtn').textContent=state.explode?'ASSEMBLE':'EXPLODE';document.querySelector('#explodeBtn').classList.toggle('active',state.explode)};
- document.querySelector('#cutBtn').onclick=()=>{state.cutaway=!state.cutaway;document.querySelector('#cutBtn').textContent=state.cutaway?'SOLID':'CUTAWAY';document.querySelector('#cutBtn').classList.toggle('active',state.cutaway);updateVisibility()};
- document.querySelector('#isoBtn').onclick=()=>{state.isolate=!state.isolate;document.querySelector('#isoBtn').textContent=state.isolate?'SHOW ALL':'ISOLATE';document.querySelector('#isoBtn').classList.toggle('active',state.isolate);updateVisibility()};
- document.querySelector('#reset').onclick=()=>{dyno.running=false;dyno.points=[];dyno.peakTorque=0;dyno.peakPower=0;document.querySelector('#dynoStart').textContent='▶ RUN DYNO PULL';state.explode=false;state.cutaway=false;state.isolate=false;state.cycle=0;state.running=false;state.throttle=18;state.load=25;state.rpm=900;physics.reset();physics.throttle=.18;physics.load=.25;physics.rpm=900;focusTarget.copy(home.target);focusCamera.copy(home.cam);focusAnimating=false;controls.reset();updateVisibility();select(state.selected,false);requestRenderMeta();document.querySelector('#throttle').value=18;document.querySelector('#load').value=25;document.querySelector('#throttleVal').textContent='18%';document.querySelector('#loadVal').textContent='25%';physics.sparkAdvance=12;document.querySelector('#advance').value=12;document.querySelector('#advanceVal').textContent='12°'};
- document.querySelector('#play').onclick=()=>{state.running=!state.running;requestRenderMeta();};
- document.querySelector('#dynoLoad').oninput=e=>{state.load=+e.target.value;physics.load=state.load/100;document.querySelector('#dynoLoadValue').textContent=state.load+'%';document.querySelector('#load').value=state.load;document.querySelector('#loadVal').textContent=state.load+'%';};
- document.querySelector('#dynoStart').onclick=()=>{
-   dyno.running=!dyno.running;
-   if(dyno.running){dyno.points=[];dyno.peakTorque=0;dyno.peakPower=0;dyno.elapsed=0;dyno.lastSample=0;state.running=true;state.throttle=100;state.load=+document.querySelector('#dynoLoad').value;physics.throttle=1;physics.load=state.load/100;document.querySelector('#throttle').value=100;document.querySelector('#throttleVal').textContent='100%';document.querySelector('#load').value=state.load;document.querySelector('#loadVal').textContent=state.load+'%';document.querySelector('#dynoStart').textContent='Ⅱ STOP DYNO PULL';}
-   else{document.querySelector('#dynoStart').textContent='▶ RUN DYNO PULL';}
-   requestRenderMeta();drawDyno();
- };
- document.querySelector('#dynoClear').onclick=()=>{dyno.running=false;dyno.points=[];dyno.peakTorque=0;dyno.peakPower=0;document.querySelector('#dynoStart').textContent='▶ RUN DYNO PULL';drawDyno();};
- drawDyno();
- document.querySelector('#throttle').oninput=e=>{state.throttle=+e.target.value;physics.throttle=state.throttle/100;document.querySelector('#throttleVal').textContent=state.throttle+'%'};document.querySelector('#load').oninput=e=>{state.load=+e.target.value;physics.load=state.load/100;document.querySelector('#loadVal').textContent=state.load+'%'};document.querySelector('#advance').oninput=e=>{physics.sparkAdvance=+e.target.value;document.querySelector('#advanceVal').textContent=physics.sparkAdvance+'°'};
- document.querySelector('#clear').onclick=()=>{state.system='All';state.search='';document.querySelector('#search').value='';document.querySelectorAll('[data-system]').forEach(x=>x.classList.toggle('active',x.dataset.system==='All'));updateVisibility();refreshCatalog()}
-}
-function learn(){
- document.querySelector('#workspace').innerHTML=`<div class="learning panel"><span class="eyebrow">HOW IT WORKS</span><h2>One cycle. Two crank revolutions.</h2><p class="lead">A four-stroke engine moves through intake, compression, power and exhaust. In a typical four-stroke layout the camshaft rotates at half crankshaft speed.</p><div class="cycleCards">${[['01','INTAKE','Piston moves down; the intake valve opens and fresh charge enters.'],['02','COMPRESSION','Both valves close; the piston moves up and compresses the charge.'],['03','POWER','Ignition initiates combustion and expanding gases push the piston down.'],['04','EXHAUST','The exhaust valve opens and the rising piston expels spent gases.']].map(x=>`<article><span>${x[0]}</span><h3>${x[1]}</h3><p>${x[2]}</p></article>`).join('')}</div><div class="sourceBox"><b>Knowledge note</b><p>Component descriptions are synthesized from automotive engineering references. Actual designs vary by engine, fuel system, valvetrain, emissions package and manufacturer.</p></div></div>`
- document.querySelector('#workspace .learning').insertAdjacentHTML('beforeend','<section id="engineQuiz" class="quizPanel"><div class="quizTop"><div><span class="eyebrow">KNOWLEDGE CHECK</span><h2>Test your engine IQ</h2></div><span id="quizProgress">QUESTION 1 / 3</span></div><p id="quizPrompt" class="quizPrompt"></p><div id="quizOptions" class="quizOptions"></div><div id="quizFeedback" class="quizFeedback" aria-live="polite"></div><div class="quizFooter"><span id="quizScore">Score: 0</span><button id="quizNext" class="quizNext" disabled>Next question →</button></div></section>');setupQuiz(document.querySelector('#engineQuiz'));
-}
-function compare(){
- document.querySelector('#workspace').innerHTML=`<div class="compare panel"><span class="eyebrow">ARCHITECTURES</span><h2>Road-engine families</h2><div class="compareGrid">${Object.entries(engines).map(([id,e])=>`<button data-engine="${id}"><div class="orb">◌</div><b>${e.name}</b><span>${e.sub}</span><small>${e.cyl} cylinders · bore ${e.bore.toFixed(2)} · stroke ${e.stroke.toFixed(2)}</small></button>`).join('')}</div></div>`;document.querySelectorAll('.compareGrid button').forEach(b=>b.onclick=()=>{state.engine=b.dataset.engine;tab('library')})
-}
-function tab(t){document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));t==='library'?renderLibrary():t==='learn'?learn():compare()}
-document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>tab(b.dataset.tab));let searchTimer;document.querySelector('#search').oninput=e=>{state.search=e.target.value;clearTimeout(searchTimer);searchTimer=setTimeout(()=>refreshCatalog(),120);};document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('#search').focus()}});
-renderLibrary();
-if(new URLSearchParams(location.search).has('debug'))window.__pieces={state,get eng(){return eng},get camera(){return camera},get controls(){return controls},get physics(){return physics},THREE};

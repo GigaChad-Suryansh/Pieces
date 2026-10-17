@@ -815,11 +815,26 @@ export function buildEngine(spec, opts = {}) {
     return any ? b.getCenter(new THREE.Vector3()) : null;
   }
 
+  /** World-space centre of the visible instance of a part closest to the camera (for callouts). */
+  function anchorOf(name, camera) {
+    const b = new THREE.Box3(), c = new THREE.Vector3();
+    let best = null, bd = Infinity;
+    for (const p of parts) {
+      if (p.userData.part !== name || !p.visible) continue;
+      b.makeEmpty().expandByObject(p);
+      if (b.isEmpty()) continue;
+      b.getCenter(c);
+      const d = camera ? c.distanceTo(camera.position) : 0;
+      if (d < bd) { bd = d; best = c.clone(); }
+    }
+    return best;
+  }
+
   applyFilter();
   update({ theta: 0 });
 
   return {
-    root, parts, bounds, layout, update, applyFilter, highlight, has, worldCenterOf, plane, materials: M,
+    root, parts, bounds, layout, update, applyFilter, highlight, has, worldCenterOf, anchorOf, plane, materials: M,
     dims: { deckY, ySeat, camY, coverTop, r, L, ch, bore },
   };
 }

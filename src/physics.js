@@ -404,3 +404,19 @@ export class EnginePhysics {
     };
   }
 }
+
+/**
+ * Brake torque / power the engine would make held at a steady rpm and throttle (no governor, no
+ * transients). Drives the Compare tab's power curves without disturbing a live engine.
+ */
+export function steadyState(type, rpm, throttle = 1) {
+  const p = new EnginePhysics(type);
+  const s = p.spec;
+  p.rpm = rpm;
+  p.throttle = throttle;
+  p.effectiveThrottle = throttle;
+  p.boost = s.boostMax * Math.pow(Math.min(1, throttle * 0.9 + 0.1), 1.1) * Math.min(1, Math.max(0, (rpm - 1300) / 1700));
+  p.updateCycle(true);
+  const torque = Math.max(0, p.torquePerCylinder * p.cylinders - p.frictionTorque(rpm) - (2 + 0.0012 * rpm));
+  return { rpm, torque, power: (torque * rpm * Math.PI * 2) / 60 / 1000, peak: p.peakPressure / 1e5 };
+}
