@@ -1,7 +1,7 @@
 import { steadyState } from '../physics.js';
 import { drawCurves } from '../ui/charts.js';
 
-const COLORS = { i4: '#2f7fe0', v6: '#8a5cc2', diesel: '#c47a14', bike: '#0e8f8a' };
+const COLORS = { i4: '#2f7fe0', v6: '#8a5cc2', diesel: '#c47a14', i3: '#0e8f8a' };
 
 export function mountCompare(root, { ENGINES, pick }) {
   const ids = Object.keys(ENGINES);

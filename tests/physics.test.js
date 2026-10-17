@@ -30,7 +30,7 @@ describe('layout', () => {
       const l = makeLayout(ENGINES[id]);
       const phases = l.cylinders.map((c) => c.phase).sort((a, b) => a - b);
       expect(new Set(phases).size).toBe(l.cylinders.length);
-      phases.forEach((ph, i) => expect(ph).toBeCloseTo((i * 720) / phases.length, 6));
+      phases.forEach((ph, i) => expect(((phases[(i + 1) % phases.length] - ph + 720) % 720)).toBeCloseTo(720 / phases.length, 6));
     });
   }
 });
@@ -89,5 +89,21 @@ describe('catalogue', () => {
     expect(new Set(CATALOG.map((p) => p.name)).size).toBe(CATALOG.length);
     expect(partsFor(ENGINES.diesel).some((p) => p.name === 'Spark plug')).toBe(false);
     expect(partsFor(ENGINES.i4).some((p) => p.name === 'Turbocharger')).toBe(false);
+  });
+});
+
+import { ANATOMY } from '../src/data/anatomy.js';
+describe('anatomy data', () => {
+  it('every catalogue part has complete anatomy and valid neighbours', () => {
+    const names = new Set(CATALOG.map((p) => p.name));
+    for (const p of CATALOG) {
+      const a = ANATOMY[p.name];
+      expect(a, p.name).toBeDefined();
+      for (const k of ['does', 'made', 'fails', 'notice']) expect(a[k].length, `${p.name}.${k}`).toBeGreaterThan(20);
+      expect(a.life.length, `${p.name}.life`).toBeGreaterThan(6);
+      expect(a.links.length, p.name).toBeGreaterThan(0);
+      for (const l of a.links) expect(names.has(l), `${p.name} -> ${l}`).toBe(true);
+    }
+    expect(Object.keys(ANATOMY).length).toBe(CATALOG.length);
   });
 });
