@@ -267,3 +267,6 @@ figcaption { display: flex; justify-content: space-between; gap: 10px; flex-wrap
 .engineList { grid-template-columns: 1fr 1fr; }
 .engineList button { padding: 6px 8px; gap: 6px; } .engineList button small { display: none; } .engineList button b { width: 34px; font-size: 20px; } .engineList button span { font-size: 13px; }
 .railBlock.grow { min-height: 380px; }
+@media (max-width: 860px) {
+  .seg { flex-wrap: wrap; } .hint { display: none; } .stageHead .tools { width: 100%; }
+}
