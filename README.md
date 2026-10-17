@@ -1,40 +1,48 @@
-# Pieces 2.0 — Engineverse
+# Pieces — Engineverse
 
-An interactive Three.js engineering playground for exploring road-engine anatomy, component motion, live telemetry and engine fundamentals.
+An interactive 3D engine playground. Orbit detailed engines, scrub the four-stroke cycle, hear the engine, and compare four designs built on one shared physics model.
 
-## Included
+**Live site:** deployed from `main` to GitHub Pages.
 
-- Real-time Three.js model built from independently selectable mechanical components.
-- Orbit, zoom and click-to-inspect controls.
-- Smooth explode / assemble view.
-- Cutaway mode for revealing the internal mechanism.
-- Isolate mode for studying one component.
-- Live piston motion and 0–720° crank-angle cycle.
-- Animated crankshaft, connecting-rod, camshaft and valve motion.
-- Adjustable demonstration RPM and live engine telemetry.
-- Interactive three-question Engine IQ quiz with answer explanations.
-- Engine library: inline-4, V6, turbo-diesel and motorcycle layouts.
-- 50+ catalogue entries across structure, motion, valvetrain, timing, air/fuel, ignition, cooling, lubrication, exhaust and starting systems.
-- Search and system filters.
-- Learn and Compare sections.
-- GitHub Pages deployment workflow.
+## What's in it
 
-## Engineverse 2.0 improvements\n\nThe Engine Lab keeps a single animation loop and disposes the previous renderer when switching engine models. Search and component-system filters update the catalogue without rebuilding the 3D scene, so the camera view stays put. The Learn tab includes an interactive quiz.\n\nThe procedural model is an educational abstraction, not manufacturer-specific CAD. Verify dimensions, crank phasing, valve timing and physics parameters against a named engine before treating the assembly as a precise engineering reference.\n\n## Run locally
+- **Four engines** — 2.0 L inline-4, 3.0 L V6 (60°, split crank pins), 2.2 L turbo-diesel and a 1.0 L high-revving motorcycle four. Each is built from ~300–450 individual parts (pistons with ring packs, I-beam rods, counterweighted cranks, four-valve heads with springs and buckets, cam lobes, timing chain, manifolds, turbo, radiator and more).
+- **Physics tied to geometry** — bore, stroke, rod ratio, compression ratio, valve timing and firing order are defined once (`src/data/engines.js`) and drive both the equations and the 3D model. Slider-crank kinematics are exact; in-cylinder pressure comes from a polytropic compression and Wiebe heat-release model; gas exchange, friction, volumetric efficiency, turbo lag and an idle governor are included.
+- **Engine tab** — click any part for a leader-line callout and description; Explode, Cutaway, X-ray and Isolate; live tachometer, readouts and drive controls; cycle ribbon you can scrub; pressure–crank-angle and pressure–volume charts; a full-throttle dyno pull.
+- **Sound** — engine audio synthesised from the simulated cylinder pressure (firing order and combustion strength shape the tone). Off by default; use the *Sound* button.
+- **Learn** — a one-cylinder schematic you can scrub, the P–V loop, ten engine systems and a quiz.
+- **Compare** — torque and power curves for all four engines plus a spec table.
+- Responsive down to phone width, keyboard accessible, honours reduced-motion and reduced-transparency settings.
+
+The model is an educational abstraction, not manufacturer CAD. Figures are indicative, not calibrated.
+
+## Run it
 
 ```bash
 npm install
-npm run dev
+npm run dev      # development server
+npm test         # physics, layout and sound tests (vitest)
+npm run build    # production build in dist/
 ```
 
-## 3D architecture
+Add `?debug` to the URL to expose `window.__pieces` (state, engine, camera, physics) for inspection.
 
-The current model is procedural Three.js geometry so the project runs immediately without large binary assets. Each visible component is a separate Three.js object with a part name and system category. This makes the interface ready for a later CAD/GLTF pipeline in which each real component can become its own high-detail mesh.
+## Layout
 
-Three.js OrbitControls provides camera orbiting, zooming and panning, while Raycaster handles 3D part picking.
+| Path | Purpose |
+| --- | --- |
+| `src/data/engines.js` | Engine specs and cylinder layout (single source of truth) |
+| `src/data/catalog.js` | Parts catalogue and system colours |
+| `src/physics.js` | Engine physics and `steadyState()` for power curves |
+| `src/engine3d/` | Procedural geometry, materials, studio lighting and assembly |
+| `src/scene.js` | Renderer, camera moves, picking |
+| `src/audio.js` | Engine sound synthesis |
+| `src/ui/`, `src/views/` | Tachometer, charts, callouts; Learn and Compare tabs |
+| `tests/` | Vitest suite |
 
 ## Knowledge sources
 
-The catalogue and educational explanations were researched from:
+Catalogue descriptions were researched from:
 
 - Patsnap Eureka — car engine parts overview: https://eureka.patsnap.com/blog/machinery-tech-resources/car-engine-parts-that-everyone-should-know/
 - The Engineers Post — basic engine components: https://www.theengineerspost.com/basic-engine-components-engine-parts/
@@ -43,5 +51,3 @@ The catalogue and educational explanations were researched from:
 - Educational-Animation.org — interactive four-stroke component/function reference.
 - Government of India / Skill Development Institute curriculum material covering IC-engine components and cooling systems.
 - Three.js documentation for WebGLRenderer, OrbitControls and Raycaster.
-
-The 3D assembly is an educational abstraction. Real engines differ substantially in packaging, valve arrangements, injection systems, timing drives, emissions equipment and component dimensions.

@@ -172,8 +172,8 @@ export class EnginePhysics {
     const nC = 1.33;
     const gammaB = diesel ? 1.30 : 1.28;
     // Start / duration of burn (deg crank). Burn lasts longer at high rpm in crank degrees.
-    const ign = diesel ? 360 - 4 : 360 - this.sparkAdvance - 3;
-    const dur = diesel ? 62 + rpm / 220 : 38 + rpm / 260;
+    const ign = diesel ? 360 - 6 : 360 - this.sparkAdvance - 3;
+    const dur = diesel ? 50 + rpm / 250 : 38 + rpm / 260;
     this.burnStart = ign;
     this.burnDuration = dur;
 

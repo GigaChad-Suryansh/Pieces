@@ -8,6 +8,7 @@ import { createStage } from './scene.js';
 import { createCallout } from './ui/callout.js';
 import { tachMarkup, tachUpdate } from './ui/tach.js';
 import { drawPressure, drawPV, drawCurves, STROKES, strokeAt } from './ui/charts.js';
+import { createEngineAudio } from './audio.js';
 import { mountLearn } from './views/learn.js';
 import { mountCompare } from './views/compare.js';
 
@@ -17,6 +18,7 @@ const state = {
   explode: false, cutaway: false, xray: false, isolate: false,
   running: false, rpm: 850, cycle: 0, throttle: 18, load: 25, advance: 12, preset: null,
 };
+const audio = createEngineAudio();
 const dyno = { running: false, elapsed: 0, last: 0, points: [] };
 let physics = new EnginePhysics(state.engine);
 const spec = () => ENGINES[state.engine];
@@ -62,6 +64,7 @@ $('#engineTab').innerHTML = `
             <button data-tool="cutaway" aria-pressed="false">Cutaway</button>
             <button data-tool="xray" aria-pressed="false">X-ray</button>
             <button data-tool="isolate" aria-pressed="false">Isolate</button>
+            <button id="soundBtn" aria-pressed="false" title="Synthesised engine sound">Sound</button>
           </div>
           <button class="ghost" id="resetBtn" title="Reset view and engine">Reset</button>
         </div>
@@ -228,6 +231,11 @@ document.addEventListener('click', (e) => {
     return;
   }
   if (t.dataset.preset) { const p = PRESETS[t.dataset.preset]; state.preset = t.dataset.preset; setDrive(p.throttle, p.load); state.running = true; return syncControls(); }
+  if (t.id === 'soundBtn') {
+    const want = !audio.on; t.setAttribute('aria-pressed', want); audio.set(want);
+    if (want && !state.running) { state.running = true; syncControls(); }
+    return;
+  }
   if (t.id === 'play') { state.running = !state.running; return syncControls(); }
   if (t.id === 'resetBtn') {
     Object.assign(state, { explode: false, cutaway: false, xray: false, isolate: false, system: 'All', search: '', throttle: 18, load: 25, advance: 12 });
@@ -317,12 +325,13 @@ let last = performance.now(), slow = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.04, Math.max(0, (now - last) / 1000)); last = now;
-  if (state.tab !== 'engine') return;
+  if (state.tab !== 'engine') { audio.update({ physics, spec: spec(), running: false }); return; }
   if (state.running) { const s = physics.step(dt); state.rpm = s.rpm; state.cycle = s.theta; if (dyno.running) dynoTick(dt); }
   else { physics.theta = state.cycle; physics.rpm = state.rpm; }
   const eng = stage.eng;
   eng?.update({ theta: state.cycle, physics, dt, explode: state.explode, cutaway: state.cutaway, xray: state.xray });
   stage.render();
+  audio.update({ physics, spec: spec(), running: state.running });
   const pos = eng && state.selected ? eng.anchorOf(state.selected, stage.camera) : null;
   callout.place(pos ? stage.project(pos) : null);
   tachUpdate($('#dial'), physics.rpm);
