@@ -18,7 +18,7 @@ import { mountCompare } from './views/compare.js';
 const PRESETS = { idle: { throttle: 0, load: 8 }, road: { throttle: 40, load: 32 }, power: { throttle: 92, load: 12 } };
 const state = {
   tab: 'engine', engine: 'i4', selected: 'Piston', system: 'All', search: '',
-  explode: false, cutaway: false, xray: false, isolate: false, labels: true, sim: false, layer: 0, tour: null,
+  explode: false, cutaway: false, xray: false, isolate: false, labels: false, sim: false, layer: 0, tour: null,
   running: false, rpm: 850, cycle: 0, throttle: 18, load: 25, advance: 12, preset: null,
 };
 const audio = createEngineAudio();
@@ -62,13 +62,12 @@ $('#engineTab').innerHTML = `
       <div class="stageHead">
         <div class="title"><h1 id="engName"></h1><p id="engSub"></p><p id="engFound" class="found"></p></div>
         <div class="tools" role="toolbar" aria-label="View controls">
-          <div class="seg" role="group" aria-label="Camera"><button data-view="iso" class="on">3/4</button><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="top">Top</button></div>
           <div class="seg" role="group" aria-label="Display">
             <button data-tool="explode" aria-pressed="false">Explode</button>
             <button data-tool="cutaway" aria-pressed="false">Cutaway</button>
             <button data-tool="xray" aria-pressed="false">X-ray</button>
             <button data-tool="isolate" aria-pressed="false">Isolate</button>
-            <button data-tool="labels" aria-pressed="true" title="Show part numbers">Numbers</button>
+            <button data-tool="labels" aria-pressed="false" title="Show part numbers on the engine">Numbers</button>
           </div>
           <div class="seg" role="group" aria-label="Simulator">
             <button id="simBtn" aria-pressed="false" title="Start the engine and show live instruments">Run engine</button>
@@ -77,6 +76,7 @@ $('#engineTab').innerHTML = `
           <button class="ghost" id="resetBtn" title="Reset view and engine">Reset</button>
         </div>
       </div>
+      <div class="camBar glass"><div class="seg" role="group" aria-label="Camera"><button data-view="iso" class="on">3/4</button><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="top">Top</button></div></div>
       <div class="pins" id="pins"></div>
       <div class="layersBar" id="layersBar"><div class="lbTop"><b>Layers</b><output id="layerName"></output></div>
         <input id="layers" type="range" min="0" max="${LAYERS.length - 1}" step="1" value="0" aria-label="Peel the engine apart, layer by layer">
@@ -254,7 +254,7 @@ function refreshAnchors() {
   for (const name of pinEls.keys()) { const v = eng.anchorOf(name, stage.camera); if (v) anchors.set(name, v); }
 }
 function buildPins() {
-  const host = $('#pins'); host.innerHTML = ''; pinEls.clear();
+  const host = $('#pins'); host.hidden = !state.labels; host.innerHTML = ''; pinEls.clear();
   for (const p of partsFor(spec())) {
     if (stage.eng && !stage.eng.has(p.name)) continue;
     const b = document.createElement('button');

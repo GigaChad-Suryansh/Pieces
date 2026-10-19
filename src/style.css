@@ -45,7 +45,7 @@ main { max-width: 1680px; margin: 0 auto; padding: 18px max(20px, env(safe-area-
 .foot { max-width: 1680px; margin: 0 auto; padding: 22px 20px 34px; font-size: 12.5px; color: var(--ink-3); }
 
 /* ------------------------------------------------------------------ engine view */
-.engineView { display: grid; grid-template-columns: 276px minmax(0, 1fr) 392px; gap: 16px; align-items: start; --h: clamp(600px, 82vh, 800px); }
+.engineView { display: grid; grid-template-columns: 244px minmax(0, 1fr) 348px; gap: 16px; align-items: start; --h: clamp(600px, 82vh, 800px); }
 .rail, .inspector { height: var(--h); overflow: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 14px; }
 .railBlock { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; }
 .railBlock.grow { flex: 1; min-height: 220px; display: flex; flex-direction: column; }
@@ -262,8 +262,6 @@ figcaption { display: flex; justify-content: space-between; gap: 10px; flex-wrap
 .stepper { display: flex; gap: 8px; margin-top: 18px; } .stepper button { flex: 1; min-height: 40px; border-radius: 10px; border: 1px solid var(--line-2); background: #fff; font-weight: 600; font-size: 13.5px; } .stepper button:hover { border-color: var(--ink); }
 .where { font-size: 14px; color: var(--ink-2); line-height: 1.5; margin-bottom: 10px; }
 
-.stageHead { flex-direction: column; align-items: flex-start; }
-.stageHead .tools { justify-content: flex-start; }
 .engineList { grid-template-columns: 1fr 1fr; }
 .engineList button { padding: 6px 8px; gap: 6px; } .engineList button small { display: none; } .engineList button b { width: 34px; font-size: 20px; } .engineList button span { font-size: 13px; }
 .railBlock.grow { min-height: 380px; }
@@ -299,3 +297,10 @@ figcaption { display: flex; justify-content: space-between; gap: 10px; flex-wrap
 .engineList .building small { font-weight: 400; font-size: 12px; color: var(--ink-3); }
 .engineList .building em { font-style: normal; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .engineList .building i { position: absolute; left: 10px; right: 10px; bottom: 4px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--ink-2) var(--p), transparent var(--p)); opacity: .5; }
+
+/* calmer stage: one toolbar row on top, camera views tucked bottom-right */
+.camBar { position: absolute; right: 14px; bottom: 14px; padding: 4px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-line); z-index: 3; }
+.stageHead .tools { gap: 4px; flex-wrap: wrap; }
+.stageHead .seg button, .stageHead .tools .ghost { padding: 0 9px; }
+.stageHead .title p.found { max-width: 44ch; display: -webkit-box !important; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 860px) { .camBar { bottom: auto; top: auto; } .layersBar { bottom: 62px; } }
