@@ -1,0 +1,15 @@
+{
+  "model": { "maxSessionTurns": 30 },
+  "tools": {
+    "core": ["run_shell_command", "read_file", "write_file", "replace"],
+    "allowed": [
+      "read_file", "write_file", "replace",
+      "run_shell_command(npm)", "run_shell_command(node)", "run_shell_command(npx)",
+      "run_shell_command(ls)", "run_shell_command(cat)", "run_shell_command(head)",
+      "run_shell_command(tail)", "run_shell_command(grep)", "run_shell_command(find)",
+      "run_shell_command(wc)", "run_shell_command(git status)", "run_shell_command(git diff)"
+    ]
+  },
+  "telemetry": { "enabled": false }
+}
+

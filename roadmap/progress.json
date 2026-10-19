@@ -1,10 +1,12 @@
 {
-  "completed_ids": [],
+  "completed_ids": [
+    "E01a"
+  ],
   "blocked": [],
   "consecutive_failures": 0,
-  "last_run": null,
-  "last_outcome": null,
-  "current_task": null,
+  "last_run": "2026-10-19T05:22:14.870Z",
+  "last_outcome": "verified",
+  "current_task": "E01b — 1.5L petrol four: draft the real-world figures",
   "last_failure": null,
-  "notes": "No automated runs yet."
+  "notes": "E01a built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
 }
