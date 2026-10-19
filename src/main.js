@@ -3,7 +3,10 @@ import '@fontsource-variable/ibm-plex-sans';
 import './style.css';
 import { EnginePhysics } from './physics.js';
 import { ENGINES } from './data/engines.js';
+import { UPCOMING, STAGES } from './data/upcoming.js';
 import { SYSTEMS, SYSTEM_COLOR, PART_INFO, partsFor } from './data/catalog.js';
+import { ANATOMY } from './data/anatomy.js';
+import { LAYERS, TOURS, hiddenAt, removalStep, tourSteps } from './data/layers.js';
 import { createStage } from './scene.js';
 import { createCallout } from './ui/callout.js';
 import { tachMarkup, tachUpdate } from './ui/tach.js';
@@ -15,7 +18,7 @@ import { mountCompare } from './views/compare.js';
 const PRESETS = { idle: { throttle: 0, load: 8 }, road: { throttle: 40, load: 32 }, power: { throttle: 92, load: 12 } };
 const state = {
   tab: 'engine', engine: 'i4', selected: 'Piston', system: 'All', search: '',
-  explode: false, cutaway: false, xray: false, isolate: false,
+  explode: false, cutaway: false, xray: false, isolate: false, labels: true, sim: false, layer: 0, tour: null,
   running: false, rpm: 850, cycle: 0, throttle: 18, load: 25, advance: 12, preset: null,
 };
 const audio = createEngineAudio();
@@ -48,7 +51,8 @@ $('#app').innerHTML = `
 $('#engineTab').innerHTML = `
 <section class="engineView">
   <aside class="rail" aria-label="Engines and parts">
-    <div class="railBlock"><h2 class="cap">Engine</h2><div id="engineList" class="engineList"></div></div>
+    <div class="railBlock"><h2 class="cap">Engine</h2><div id="engineList" class="engineList"></div>
+      <h2 class="cap sub">Follow the…</h2><div id="tourChips" class="chips"></div></div>
     <div class="railBlock"><h2 class="cap">Systems</h2><div id="chips" class="chips"></div></div>
     <div class="railBlock grow"><h2 class="cap"><span id="partCount">Parts</span></h2><ul id="partList" class="partList"></ul></div>
   </aside>
@@ -56,7 +60,7 @@ $('#engineTab').innerHTML = `
   <section class="stage" aria-label="3D engine">
     <div id="viewport" class="viewport">
       <div class="stageHead">
-        <div class="title"><h1 id="engName"></h1><p id="engSub"></p></div>
+        <div class="title"><h1 id="engName"></h1><p id="engSub"></p><p id="engFound" class="found"></p></div>
         <div class="tools" role="toolbar" aria-label="View controls">
           <div class="seg" role="group" aria-label="Camera"><button data-view="iso" class="on">3/4</button><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="top">Top</button></div>
           <div class="seg" role="group" aria-label="Display">
@@ -64,13 +68,23 @@ $('#engineTab').innerHTML = `
             <button data-tool="cutaway" aria-pressed="false">Cutaway</button>
             <button data-tool="xray" aria-pressed="false">X-ray</button>
             <button data-tool="isolate" aria-pressed="false">Isolate</button>
+            <button data-tool="labels" aria-pressed="true" title="Show part numbers">Numbers</button>
+          </div>
+          <div class="seg" role="group" aria-label="Simulator">
+            <button id="simBtn" aria-pressed="false" title="Start the engine and show live instruments">Run engine</button>
             <button id="soundBtn" aria-pressed="false" title="Synthesised engine sound">Sound</button>
           </div>
           <button class="ghost" id="resetBtn" title="Reset view and engine">Reset</button>
         </div>
       </div>
-      <div class="dial" id="dial"></div>
-      <div class="deck">
+      <div class="pins" id="pins"></div>
+      <div class="layersBar" id="layersBar"><div class="lbTop"><b>Layers</b><output id="layerName"></output></div>
+        <input id="layers" type="range" min="0" max="${LAYERS.length - 1}" step="1" value="0" aria-label="Peel the engine apart, layer by layer">
+        <p class="hint">Click a part or its number · drag to orbit · [ and ] step through the index</p></div>
+      <div class="tourBar" id="tourBar" hidden><small id="tourKicker"></small><b id="tourTitle"></b><p id="tourText"></p>
+        <div class="tourBtns"><button id="tourPrev" aria-label="Previous step">←</button><span id="tourCount"></span><button id="tourNext" class="solid">Next →</button><button id="tourExit" class="ghost">Exit tour</button></div></div>
+      <div class="dial simOnly" id="dial"></div>
+      <div class="deck simOnly">
         <div class="deckTop">
           <button class="play" id="play" aria-label="Start engine"></button>
           <div class="phase"><small>Cylinder 1</small><b id="phaseName">Intake</b></div>
@@ -85,9 +99,9 @@ $('#engineTab').innerHTML = `
     </div>
   </section>
 
-  <aside class="inspector" aria-label="Inspector">
+  <aside class="inspector" id="inspectorScroll" aria-label="Inspector">
     <section class="card part" id="partCard"></section>
-    <section class="card"><h2 class="cap">Live</h2>
+    <section class="card simOnly"><h2 class="cap">Live</h2>
       <div class="read">
         <div><small>Power</small><b id="rPower">0</b><i>kW</i></div>
         <div><small>Torque</small><b id="rTorque">0</b><i>Nm</i></div>
@@ -100,16 +114,16 @@ $('#engineTab').innerHTML = `
       </div>
       <div class="knock"><small>Knock risk</small><span class="meter"><i id="knockBar"></i></span></div>
     </section>
-    <section class="card"><h2 class="cap">Drive</h2>
+    <section class="card simOnly"><h2 class="cap">Drive</h2>
       <label class="slide"><span>Throttle</span><output id="oThrottle"></output><input id="throttle" type="range" min="0" max="100"></label>
       <label class="slide"><span>Load</span><output id="oLoad"></output><input id="load" type="range" min="0" max="100"></label>
       <label class="slide"><span id="advLabel">Ignition advance</span><output id="oAdv"></output><input id="advance" type="range" min="0" max="35"></label>
     </section>
-    <section class="card"><h2 class="cap">Specification</h2><dl id="specs" class="specs"></dl></section>
+    <section class="card"><h2 class="cap">This engine</h2><p id="engWhere" class="where"></p><dl id="specs" class="specs"></dl></section>
   </aside>
 </section>
 
-<section class="panel charts" aria-label="Cylinder traces">
+<section class="panel charts simOnly" aria-label="Cylinder traces">
   <header><div><h2 class="cap">Cylinder 1</h2><h3>What the gas is doing</h3></div><p class="note">Drag the crank ribbon to scrub through the cycle.</p></header>
   <div class="chartGrid">
     <figure><figcaption><b>Pressure vs crank angle</b><span><i class="k" style="--c:#2f7fe0"></i>intake valve <i class="k" style="--c:#7b848d"></i>exhaust valve</span></figcaption><canvas id="cvP" role="img" aria-label="Cylinder pressure against crank angle"></canvas></figure>
@@ -118,7 +132,7 @@ $('#engineTab').innerHTML = `
   <div class="strokeKey">${STROKES.map((s) => `<span><i class="k" style="--c:${s.color}"></i>${s.id}</span>`).join('')}</div>
 </section>
 
-<section class="panel dyno" aria-label="Dyno">
+<section class="panel dyno simOnly" aria-label="Dyno">
   <header><div><h2 class="cap">Dyno</h2><h3>Full-throttle pull</h3></div>
     <div class="dynoBtns"><button id="dynoStart" class="solid">Run pull</button><button id="dynoClear" class="ghost">Clear</button></div></header>
   <div class="dynoBody"><canvas id="cvDyno" role="img" aria-label="Torque and power against rpm"></canvas>
@@ -136,7 +150,7 @@ const stage = createStage(viewport, {
 
 function applyState() {
   const eng = stage.eng; if (!eng) return;
-  eng.applyFilter({ system: state.system, isolate: state.isolate ? state.selected : null });
+  eng.applyFilter({ system: state.system, isolate: state.isolate ? state.selected : null, hide: hiddenAt(state.layer) });
 }
 
 function loadEngine(id) {
@@ -149,10 +163,12 @@ function loadEngine(id) {
   stage.setEngine(s);
   const names = new Set(partsFor(s).map((p) => p.name));
   if (!names.has(state.selected)) state.selected = 'Piston';
-  $('#engName').textContent = s.name; $('#engSub').textContent = s.sub;
+  $('#engName').textContent = s.name; $('#engSub').textContent = s.sub; $('#engFound').innerHTML = '<b>Found in</b> ' + s.where.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   $('#dial').innerHTML = tachMarkup(s.redline);
   $('#advLabel').textContent = s.fuel === 'diesel' ? 'Injection advance' : 'Ignition advance';
-  renderEngineList(); renderSpecs(); renderParts(); syncControls(); syncToggles();
+  if (state.tour) tourEnd();
+  renderEngineList(); renderSpecs(); renderParts(); buildPins(); syncControls(); syncToggles(); renderTourChips(); setLayer(state.layer, { silent: true });
+  $('#engWhere').textContent = s.where;
   applyState(); select(state.selected, { silent: true });
   $('#dynoStart').textContent = 'Run pull'; drawDyno();
 }
@@ -160,7 +176,8 @@ function loadEngine(id) {
 // ---------------------------------------------------------------------------------------------------- rail
 function renderEngineList() {
   $('#engineList').innerHTML = Object.values(ENGINES).map((e) =>
-    `<button data-engine="${e.id}" aria-pressed="${e.id === state.engine}"><b>${esc(e.short)}</b><span>${esc(e.name)}<small>${esc(e.sub)}</small></span></button>`).join('');
+    `<button data-engine="${e.id}" aria-pressed="${e.id === state.engine}"><b>${esc(e.short)}</b><span>${esc(e.name)}<small>${esc(e.sub)}</small></span></button>`).join('') +
+    UPCOMING.map((u) => `<div class="building" role="note" title="${esc(STAGES[u.done] || '')}"><b>${esc(u.short)}</b><span>${esc(u.name)}<small>${esc(u.sub)}</small></span><em>Building ${u.done + 1}/${STAGES.length}</em><i style="--p:${Math.round(((u.done + 1) / STAGES.length) * 100)}%"></i></div>`).join('');
   const chips = ['All', ...SYSTEMS.map((s) => s.id)];
   $('#chips').innerHTML = chips.map((c) =>
     `<button data-system="${esc(c)}" aria-pressed="${c === state.system}" style="--c:${SYSTEM_COLOR[c] || 'var(--ink)'}"><i></i>${esc(c)}</button>`).join('');
@@ -169,13 +186,19 @@ function visibleParts() {
   const q = state.search.trim().toLowerCase();
   return partsFor(spec()).filter((p) => (state.system === 'All' || p.system === state.system) && (!q || `${p.name} ${p.system} ${p.desc}`.toLowerCase().includes(q)));
 }
+const numberOf = new Map();
 function renderParts() {
-  const list = visibleParts(), eng = stage.eng;
-  $('#partCount').textContent = `${list.length} part${list.length === 1 ? '' : 's'}`;
-  $('#partList').innerHTML = list.map((p) => {
+  const eng = stage.eng;
+  partsFor(spec()).forEach((p, i) => numberOf.set(p.name, i + 1));
+  const list = visibleParts();
+  $('#partCount').textContent = `Index · ${list.length} part${list.length === 1 ? '' : 's'}`;
+  let html = '', cur = '';
+  for (const p of list) {
+    if (p.system !== cur) { cur = p.system; html += `<li class="grp" style="--c:${SYSTEM_COLOR[cur]}"><i></i>${esc(cur)}</li>`; }
     const modelled = !eng || eng.has(p.name);
-    return `<li><button data-part="${esc(p.name)}" class="${p.name === state.selected ? 'sel' : ''}${modelled ? '' : ' flat'}" style="--c:${SYSTEM_COLOR[p.system]}"><i></i><span>${esc(p.name)}</span>${modelled ? '' : '<em>ref</em>'}</button></li>`;
-  }).join('') || '<li class="empty">No parts match.</li>';
+    html += `<li><button data-part="${esc(p.name)}" class="${p.name === state.selected ? 'sel' : ''}${modelled ? '' : ' flat'}" style="--c:${SYSTEM_COLOR[p.system]}"><b>${numberOf.get(p.name)}</b><span>${esc(p.name)}</span>${modelled ? '' : '<em>ref</em>'}</button></li>`;
+  }
+  $('#partList').innerHTML = html || '<li class="empty">No parts match.</li>';
 }
 function renderSpecs() {
   const s = spec(), disp = ((Math.PI / 4) * s.bore * s.bore * s.stroke * s.cylinders * 1000).toFixed(2);
@@ -192,16 +215,115 @@ function renderSpecs() {
 function select(name, { list = false, silent = false, focus = false } = {}) {
   state.selected = name;
   const info = PART_INFO[name] || { system: 'Engine', desc: '' };
+  const A = ANATOMY[name];
   const color = SYSTEM_COLOR[info.system] || '#6f7b86';
   const eng = stage.eng, modelled = !eng || eng.has(name);
+  const rs = removalStep(name);
+  if (rs && state.layer >= rs) setLayer(rs - 1, { silent: true });
   eng?.highlight(name, parseInt(color.slice(1), 16), 0.5);
   if (state.isolate) applyState();
-  $('#partCard').innerHTML = `<span class="sysTag" style="--c:${color}"><i></i>${esc(info.system)}</span><h2>${esc(name)}</h2><p>${esc(info.desc)}</p>
-    ${modelled ? '' : '<p class="flatNote">Shown for reference — this engine has no modelled part of this kind.</p>'}`;
+  const row = (k, v) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`;
+  $('#partCard').innerHTML = `<div class="pageTop"><span class="sysTag" style="--c:${color}"><i></i>${esc(info.system)}</span><span class="no">No. ${numberOf.get(name) || '–'}</span></div>
+    <h2>${esc(name)}</h2><p class="lead">${esc(info.desc)}</p>
+    ${modelled ? '' : '<p class="flatNote">Shown for reference — this engine has no modelled part of this kind.</p>'}
+    ${A ? `<dl class="anat">${row('Made of', A.made)}${row('What it does', A.does)}${row('How it fails', A.fails)}${row('You’d notice', A.notice)}${row('Service life', A.life)}</dl>
+    <h3 class="cap">Sits next to</h3><div class="links">${A.links.filter((l) => numberOf.has(l)).map((l) => `<button data-part="${esc(l)}" style="--c:${SYSTEM_COLOR[PART_INFO[l].system]}"><i></i>${esc(l)}</button>`).join('')}</div>` : ''}
+    <div class="stepper"><button id="prevPart">← Previous</button><button id="nextPart">Next →</button></div>`;
+  $('#inspectorScroll')?.scrollTo({ top: 0 });
   callout.set(modelled ? { name, system: info.system, color, hint: '' } : null);
   $$('#partList button').forEach((b) => b.classList.toggle('sel', b.dataset.part === name));
+  $$('#pins .pin').forEach((b) => b.classList.toggle('sel', b.dataset.part === name));
   if (focus || list) stage.focusPart(name);
-  if (!silent && list) $(`#partList button[data-part="${CSS.escape(name)}"]`)?.scrollIntoView({ block: 'nearest' });
+  if (!silent) {
+    const b = $(`#partList button[data-part="${CSS.escape(name)}"]`), l = $('#partList');
+    if (b) l.scrollTop += b.getBoundingClientRect().top - l.getBoundingClientRect().top - l.clientHeight / 2 + b.offsetHeight / 2;
+  }
+}
+function step(d) {
+  const names = visibleParts().map((p) => p.name); if (!names.length) return;
+  const i = names.indexOf(state.selected);
+  select(names[(i + d + names.length) % names.length], { focus: true });
+}
+
+// pins: numbered markers over the 3D parts
+const pinEls = new Map(), anchors = new Map();
+let anchorT = 0;
+function refreshAnchors() {
+  anchors.clear();
+  const eng = stage.eng; if (!eng) return;
+  for (const name of pinEls.keys()) { const v = eng.anchorOf(name, stage.camera); if (v) anchors.set(name, v); }
+}
+function buildPins() {
+  const host = $('#pins'); host.innerHTML = ''; pinEls.clear();
+  for (const p of partsFor(spec())) {
+    if (stage.eng && !stage.eng.has(p.name)) continue;
+    const b = document.createElement('button');
+    b.className = 'pin' + (p.name === state.selected ? ' sel' : ''); b.dataset.part = p.name; b.tabIndex = -1;
+    b.style.setProperty('--c', SYSTEM_COLOR[p.system]); b.textContent = numberOf.get(p.name); b.setAttribute('aria-label', p.name);
+    b.addEventListener('pointerenter', (e) => callout.hover(p.name, e)); b.addEventListener('pointerleave', () => callout.hover(null));
+    host.appendChild(b); pinEls.set(p.name, b);
+  }
+  host.hidden = !state.labels; refreshAnchors();
+}
+function placePins(dt) {
+  if (!state.labels) return;
+  anchorT += dt; if (anchorT > 0.3) { anchorT = 0; refreshAnchors(); }
+  const pts = [];
+  for (const [name, el] of pinEls) {
+    const v = anchors.get(name), sp = v && stage.project(v);
+    if (!sp) { el.style.display = 'none'; continue; }
+    pts.push({ el, ax: sp.x, ay: sp.y, x: sp.x, y: sp.y });
+  }
+  // Nudge crowded pins apart (deterministic, so nothing jitters while the camera moves).
+  for (let it = 0; it < 6; it++) {
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+      const a = pts[i], b = pts[j]; let dx = b.x - a.x, dy = b.y - a.y; const d = Math.hypot(dx, dy);
+      if (d < 25) { if (d < 0.01) { dx = 1; dy = 0.3; } const k = (25 - d) / 2 / (d || 1.05); a.x -= dx * k; a.y -= dy * k; b.x += dx * k; b.y += dy * k; }
+    }
+    for (const p of pts) { const ox = p.x - p.ax, oy = p.y - p.ay, o = Math.hypot(ox, oy); if (o > 34) { p.x = p.ax + (ox / o) * 34; p.y = p.ay + (oy / o) * 34; } }
+  }
+  for (const p of pts) { p.el.style.display = ''; p.el.style.transform = `translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) translate(-50%,-50%)`; }
+}
+
+function setLayer(n, { silent = false } = {}) {
+  state.layer = n; $('#layers').value = n; $('#layerName').textContent = LAYERS[n].label;
+  $('#layers').style.setProperty('--p', (n / (LAYERS.length - 1)) * 100 + '%');
+  applyState(); if (!silent) refreshAnchors();
+}
+
+function renderTourChips() {
+  $('#tourChips').innerHTML = Object.entries(TOURS).map(([id, t]) =>
+    `<button data-tour="${id}" aria-pressed="${state.tour?.id === id}" style="--c:${t.color}"><i></i>${t.label}</button>`).join('');
+}
+function tourShow() {
+  const t = state.tour; if (!t) return;
+  const steps = tourSteps(t.id, spec()), st = steps[t.i], def = TOURS[t.id];
+  $('#tourKicker').textContent = `Follow the ${def.label.toLowerCase()}`; $('#tourKicker').style.color = def.color;
+  $('#tourTitle').textContent = st.part; $('#tourText').textContent = st.text;
+  $('#tourCount').textContent = `${t.i + 1} / ${steps.length}`;
+  $('#tourPrev').disabled = t.i === 0; $('#tourNext').textContent = t.i === steps.length - 1 ? 'Finish' : 'Next →';
+  state.system = 'All'; state.isolate = false; syncToggles(); renderEngineList(); renderParts();
+  setLayer(0, { silent: true });
+  select(st.part, { focus: true });
+}
+function tourStart(id) {
+  if (state.sim) setSim(false);
+  state.tour = { id, i: 0 }; $('#engineTab').classList.add('tour'); $('#tourBar').hidden = false; renderTourChips(); tourShow();
+}
+function tourStep(d) {
+  if (!state.tour) return;
+  const n = tourSteps(state.tour.id, spec()).length, i = state.tour.i + d;
+  if (i >= n) return tourEnd(); state.tour.i = Math.max(0, i); tourShow();
+}
+function tourEnd() {
+  state.tour = null; $('#engineTab').classList.remove('tour'); $('#tourBar').hidden = true; renderTourChips(); stage.goHome();
+}
+
+function setSim(on) {
+  if (on && state.tour) tourEnd();
+  state.sim = on; $('#engineTab').classList.toggle('sim', on); $('#simBtn').setAttribute('aria-pressed', on);
+  if (!on) { state.running = false; if (audio.on) { audio.set(false); $('#soundBtn').setAttribute('aria-pressed', false); } syncControls(); }
+  else { drawCharts(); drawDyno(); }
 }
 
 // ---------------------------------------------------------------------------------------------------- controls
@@ -212,7 +334,7 @@ function syncControls() {
   const play = $('#play'); play.dataset.on = state.running; play.setAttribute('aria-label', state.running ? 'Pause engine' : 'Start engine');
 }
 function syncToggles() {
-  for (const k of ['explode', 'cutaway', 'xray', 'isolate']) $(`[data-tool="${k}"]`).setAttribute('aria-pressed', state[k]);
+  for (const k of ['explode', 'cutaway', 'xray', 'isolate', 'labels']) $(`[data-tool="${k}"]`).setAttribute('aria-pressed', state[k]);
 }
 function setDrive(throttle, load) {
   state.throttle = throttle; state.load = load; physics.throttle = throttle / 100; physics.load = load / 100; syncControls();
@@ -226,19 +348,28 @@ document.addEventListener('click', (e) => {
   if (t.dataset.part) return select(t.dataset.part, { focus: true });
   if (t.dataset.view) { $$('[data-view]').forEach((b) => b.classList.toggle('on', b === t)); return stage.view(t.dataset.view); }
   if (t.dataset.tool) {
-    const k = t.dataset.tool; state[k] = !state[k]; syncToggles(); applyState();
+    const k = t.dataset.tool; state[k] = !state[k]; syncToggles();
+    if (k === 'labels') { $('#pins').hidden = !state.labels; return; }
+    applyState();
     if (k === 'explode') stage.dolly(state.explode ? 1.3 : 1 / 1.3, state.explode ? 2.2 : -2.2);
     return;
   }
   if (t.dataset.preset) { const p = PRESETS[t.dataset.preset]; state.preset = t.dataset.preset; setDrive(p.throttle, p.load); state.running = true; return syncControls(); }
   if (t.id === 'soundBtn') {
     const want = !audio.on; t.setAttribute('aria-pressed', want); audio.set(want);
-    if (want && !state.running) { state.running = true; syncControls(); }
+    if (want) { if (!state.sim) setSim(true); if (!state.running) { state.running = true; syncControls(); } }
     return;
   }
+  if (t.dataset.tour) return state.tour?.id === t.dataset.tour ? tourEnd() : tourStart(t.dataset.tour);
+  if (t.id === 'tourNext') return tourStep(1);
+  if (t.id === 'tourPrev') return tourStep(-1);
+  if (t.id === 'tourExit') return tourEnd();
+  if (t.id === 'simBtn') return setSim(!state.sim);
+  if (t.id === 'prevPart') return step(-1);
+  if (t.id === 'nextPart') return step(1);
   if (t.id === 'play') { state.running = !state.running; return syncControls(); }
   if (t.id === 'resetBtn') {
-    Object.assign(state, { explode: false, cutaway: false, xray: false, isolate: false, system: 'All', search: '', throttle: 18, load: 25, advance: 12 });
+    Object.assign(state, { explode: false, cutaway: false, xray: false, isolate: false, layer: 0, system: 'All', search: '', throttle: 18, load: 25, advance: 12 });
     $('#search').value = ''; stage.goHome(); $$('[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === 'iso'));
     return loadEngine(state.engine);
   }
@@ -247,6 +378,7 @@ document.addEventListener('click', (e) => {
 });
 $('#throttle').oninput = (e) => { state.preset = null; setDrive(+e.target.value, state.load); };
 $('#load').oninput = (e) => { state.preset = null; setDrive(state.throttle, +e.target.value); };
+$('#layers').oninput = (e) => { if (state.tour) tourEnd(); setLayer(+e.target.value); };
 $('#advance').oninput = (e) => { state.advance = +e.target.value; physics.sparkAdvance = state.advance; syncControls(); };
 
 // Crank ribbon: pointer-down scrubs immediately and tracks the pointer 1:1.
@@ -264,7 +396,9 @@ $('#search').addEventListener('input', (e) => { state.search = e.target.value; i
 document.addEventListener('keydown', (e) => {
   const typing = /input|textarea/i.test(document.activeElement?.tagName);
   if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) { e.preventDefault(); $('#search').focus(); }
-  if (e.key === ' ' && !typing && state.tab === 'engine' && !/button|a/i.test(document.activeElement?.tagName)) { e.preventDefault(); state.running = !state.running; syncControls(); }
+  if (state.tour && !typing && state.tab === 'engine') { if (e.key === 'ArrowRight') tourStep(1); if (e.key === 'ArrowLeft') tourStep(-1); if (e.key === 'Escape') tourEnd(); }
+  if ((e.key === '[' || e.key === ']') && !typing && state.tab === 'engine') step(e.key === ']' ? 1 : -1);
+  if (e.key === ' ' && !typing && state.sim && state.tab === 'engine' && !/button|a/i.test(document.activeElement?.tagName)) { e.preventDefault(); state.running = !state.running; syncControls(); }
 });
 
 function setTab(t) {
@@ -334,6 +468,8 @@ function frame(now) {
   audio.update({ physics, spec: spec(), running: state.running });
   const pos = eng && state.selected ? eng.anchorOf(state.selected, stage.camera) : null;
   callout.place(pos ? stage.project(pos) : null);
+  placePins(dt);
+  if (!state.sim) return;
   tachUpdate($('#dial'), physics.rpm);
   slow += dt;
   if (slow > 0.08) { slow = 0; readouts(); drawCharts(); if (dyno.running || dyno.points.length) drawDyno(); }

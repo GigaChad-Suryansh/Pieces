@@ -42,7 +42,11 @@ export function createEngineAudio() {
     tone = ctx.createBiquadFilter(); tone.type = 'lowpass'; tone.Q.value = 0.9;
     const body = ctx.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 110; body.gain.value = 5; body.Q.value = 0.8;
     master = ctx.createGain(); master.gain.value = 0;
-    osc.connect(tone); tone.connect(body); body.connect(master);
+    // soft saturation adds upper harmonics, so the low idle rumble is still audible on laptop and phone speakers
+    const shaper = ctx.createWaveShaper(), curve = new Float32Array(1024);
+    for (let i = 0; i < curve.length; i++) { const x = (i / 511.5 - 1) * 2.4; curve[i] = Math.tanh(x); }
+    shaper.curve = curve;
+    osc.connect(tone); tone.connect(shaper); shaper.connect(body); body.connect(master);
     // intake / exhaust rush: filtered noise
     const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -73,10 +77,10 @@ export function createEngineAudio() {
         osc.setPeriodicWave(wave);
       }
       osc.frequency.setTargetAtTime(Math.max(1, rpm / 120), t, 0.04);
-      tone.frequency.setTargetAtTime(380 + thr * 1800 + rpm * 0.35, t, 0.06);
-      noiseGain.gain.setTargetAtTime(running ? 0.012 + 0.07 * thr * Math.min(1, rpm / spec.redline + 0.2) : 0, t, 0.08);
-      const loud = 0.30 + 0.5 * thr + 0.15 * physics.load;
-      master.gain.setTargetAtTime(running ? loud * 0.45 : 0, t, running ? 0.08 : 0.12);
+      tone.frequency.setTargetAtTime(750 + thr * 1800 + rpm * 0.5, t, 0.06);
+      noiseGain.gain.setTargetAtTime(running ? 0.03 + 0.06 * thr * Math.min(1, rpm / spec.redline + 0.2) : 0, t, 0.08);
+      const loud = 0.55 + 0.35 * thr + 0.1 * physics.load;
+      master.gain.setTargetAtTime(running ? loud * 0.5 : 0, t, running ? 0.08 : 0.12);
     },
   };
 }

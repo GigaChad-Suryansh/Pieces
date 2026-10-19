@@ -1,0 +1,725 @@
+{
+  "version": 1,
+  "description": "Ordered backlog for the Pieces atlas. The daily agent takes the first eligible item with auto=true; items with auto=false need a person.",
+  "areas": [
+    "engine",
+    "part",
+    "ui",
+    "content",
+    "quality"
+  ],
+  "items": [
+    {
+      "id": "E01a",
+      "area": "engine",
+      "title": "1.5L petrol four: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 1.5L petrol four (compact sedans and hatchbacks) to UPCOMING in src/data/upcoming.js with id `i4s`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
+      ]
+    },
+    {
+      "id": "E01b",
+      "area": "engine",
+      "title": "1.5L petrol four: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E01a"
+      ],
+      "detail": "On the `i4s` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 1.5L petrol four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E01c",
+      "area": "engine",
+      "title": "1.5L petrol four: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E01b"
+      ],
+      "detail": "Move `i4s` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming compact sedans and hatchbacks), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs i4s` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
+      ]
+    },
+    {
+      "id": "F01",
+      "area": "quality",
+      "title": "Audit the audio at idle, road and power",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Check src/audio.js for any state in which an engine is silent or inaudibly quiet (idle, low rpm, each engine). Add a pure function for target loudness and unit-test that every engine at idle has at least 60% of its power-mode loudness.",
+      "acceptance": [
+        "Loudness function with tests",
+        "No engine near-silent at idle"
+      ]
+    },
+    {
+      "id": "E02a",
+      "area": "engine",
+      "title": "2.5L petrol four: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 2.5L petrol four (mid-size sedans) to UPCOMING in src/data/upcoming.js with id `i4m`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
+      ]
+    },
+    {
+      "id": "E02b",
+      "area": "engine",
+      "title": "2.5L petrol four: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E02a"
+      ],
+      "detail": "On the `i4m` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 2.5L petrol four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "F02",
+      "area": "ui",
+      "title": "Check every part page for overflow and missing text",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Write a test that every ANATOMY field renders without being empty and that no field is longer than 220 characters; shorten any that are.",
+      "acceptance": [
+        "Test added",
+        "All entries pass"
+      ]
+    },
+    {
+      "id": "E02c",
+      "area": "engine",
+      "title": "2.5L petrol four: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E02b"
+      ],
+      "detail": "Move `i4m` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming mid-size sedans), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs i4m` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
+      ]
+    },
+    {
+      "id": "E03a",
+      "area": "engine",
+      "title": "1.5L turbo-diesel four: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 1.5L turbo-diesel four (small SUVs and hatchbacks) to UPCOMING in src/data/upcoming.js with id `d4s`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
+      ]
+    },
+    {
+      "id": "F03",
+      "area": "ui",
+      "title": "Show \"Found in\" for every engine in Compare",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add a \"Found in\" row to the Compare table from each engine `where`.",
+      "acceptance": [
+        "Row visible in Compare",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E03b",
+      "area": "engine",
+      "title": "1.5L turbo-diesel four: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E03a"
+      ],
+      "detail": "On the `d4s` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 1.5L turbo-diesel four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E03c",
+      "area": "engine",
+      "title": "1.5L turbo-diesel four: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E03b"
+      ],
+      "detail": "Move `d4s` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming small SUVs and hatchbacks), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs d4s` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
+      ]
+    },
+    {
+      "id": "P01",
+      "area": "part",
+      "title": "Model the rocker arm (roller finger follower)",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "The catalogue has a Rocker arm entry but no 3D model, so it shows as \"ref\". Add a finger-follower rocker to src/engine3d (name it exactly `Rocker arm`) for engines that would plausibly use one, or document in anatomy.js why not. It must move with the camshaft (follow valveLiftCurve) like the valves do.",
+      "acceptance": [
+        "A mesh named `Rocker arm` exists in at least one engine",
+        "It moves with the cam; guard tests pass"
+      ]
+    },
+    {
+      "id": "E04a",
+      "area": "engine",
+      "title": "2.0L turbo-diesel four: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 2.0L turbo-diesel four (SUVs and pickups) to UPCOMING in src/data/upcoming.js with id `d4m`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
+      ]
+    },
+    {
+      "id": "E04b",
+      "area": "engine",
+      "title": "2.0L turbo-diesel four: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E04a"
+      ],
+      "detail": "On the `d4m` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 2.0L turbo-diesel four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "P02",
+      "area": "part",
+      "title": "Add Dipstick and Oil filler cap",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add both to src/data/catalog.js (system Lubrication), give each a complete src/data/anatomy.js entry (the anatomy test checks every part), and model them in src/engine3d/build.js with the exact part names.",
+      "acceptance": [
+        "Both parts appear in the index and on the plate",
+        "`npm test` passes (anatomy and guard tests)"
+      ]
+    },
+    {
+      "id": "E04c",
+      "area": "engine",
+      "title": "2.0L turbo-diesel four: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E04b"
+      ],
+      "detail": "Move `d4m` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming SUVs and pickups), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs d4m` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
+      ]
+    },
+    {
+      "id": "E05a",
+      "area": "engine",
+      "title": "3.5L V6: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 3.5L V6 (large SUVs and minivans) to UPCOMING in src/data/upcoming.js with id `v6l`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
+      ]
+    },
+    {
+      "id": "P03",
+      "area": "part",
+      "title": "Add Engine mounts",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add `Engine mount` (system Structure): catalogue row, anatomy entry, and 3D model (rubber-and-steel mounts at the block sides). Include it in the first peel layer or leave it for the last, and say why.",
+      "acceptance": [
+        "Part appears in the index and 3D view",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E05b",
+      "area": "engine",
+      "title": "3.5L V6: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E05a"
+      ],
+      "detail": "On the `v6l` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 3.5L V6, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E05c",
+      "area": "engine",
+      "title": "3.5L V6: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E05b"
+      ],
+      "detail": "Move `v6l` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming large SUVs and minivans), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs v6l` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
+      ]
+    },
+    {
+      "id": "P04",
+      "area": "part",
+      "title": "Add Knock sensor and Crankshaft position sensor",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Two small sensors: catalogue rows (system Ignition for knock, Timing for crank position), anatomy entries and 3D models. Mention in the anatomy what each tells the engine computer.",
+      "acceptance": [
+        "Both parts present in all engines",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E06a",
+      "area": "engine",
+      "title": "3.0L inline-six: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 3.0L inline-six (premium sedans) to UPCOMING in src/data/upcoming.js with id `i6`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
+      ]
+    },
+    {
+      "id": "E06b",
+      "area": "engine",
+      "title": "3.0L inline-six: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E06a"
+      ],
+      "detail": "On the `i6` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 3.0L inline-six, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "P05",
+      "area": "part",
+      "title": "Add Variable valve timing actuator",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "Add `Variable valve timing actuator` (system Valvetrain) on the camshaft nose: catalogue row, anatomy entry, 3D model, and add it to the camshaft peel layer in src/data/layers.js.",
+      "acceptance": [
+        "Part visible and selectable",
+        "Hidden with the camshafts layer; tests pass"
+      ]
+    },
+    {
+      "id": "E06c",
+      "area": "engine",
+      "title": "3.0L inline-six: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E06b"
+      ],
+      "detail": "Move `i6` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming premium sedans), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs i6` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
+      ]
+    },
+    {
+      "id": "P06",
+      "area": "part",
+      "title": "Add Timing cover and Crankshaft seal",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add both (system Timing / Structure): catalogue, anatomy, 3D. The timing cover should hide with the first peel layer so the chain is visible after.",
+      "acceptance": [
+        "Parts present; layer order sensible",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "P07",
+      "area": "part",
+      "title": "Add Coolant hoses and Expansion tank",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add both to the Cooling system: catalogue, anatomy and 3D models connecting radiator, pump and thermostat. Add the hoses to the Coolant tour in src/data/layers.js.",
+      "acceptance": [
+        "Parts present; Coolant tour updated",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U01",
+      "area": "ui",
+      "title": "Deep links: #engine=\u2026&part=\u2026&layer=\u2026",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Read and write the URL hash so a link opens a given engine, part and layer, and so the browser back button steps through selections. Keep `?debug` working.",
+      "acceptance": [
+        "Opening a link restores engine, part and layer",
+        "Invalid values fall back to defaults without errors"
+      ]
+    },
+    {
+      "id": "U02",
+      "area": "ui",
+      "title": "Keyboard shortcuts help",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Press `?` to show a small dialog listing every shortcut (/, [, ], arrows in tours, space in Run engine, Esc). Make it accessible (focus trap, Esc to close).",
+      "acceptance": [
+        "Dialog opens and closes by keyboard",
+        "Listed shortcuts all work"
+      ]
+    },
+    {
+      "id": "U03",
+      "area": "ui",
+      "title": "Dark theme",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "Add a dark theme for the page shell that follows `prefers-color-scheme` with a manual toggle in the header. Charts read their colours from CSS variables; keep contrast at WCAG AA.",
+      "acceptance": [
+        "Both themes look right on Engine, Learn and Compare",
+        "Toggle persists (try/catch around storage)"
+      ]
+    },
+    {
+      "id": "U04",
+      "area": "ui",
+      "title": "Engine picker that scales to ten engines",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "The picker is a 2\u00d72 grid. Group engines by kind (petrol, diesel, V) and keep it usable with ten entries without pushing the parts index off screen.",
+      "acceptance": [
+        "Ten engines fit comfortably on desktop and phone",
+        "Selection and keyboard behaviour unchanged"
+      ]
+    },
+    {
+      "id": "U05",
+      "area": "ui",
+      "title": "Loading state and WebGL fallback",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Show a skeleton while the first engine builds, and a clear message with a link to the Learn tab if WebGL is unavailable instead of a blank stage.",
+      "acceptance": [
+        "No blank stage in either case",
+        "Message is announced to screen readers"
+      ]
+    },
+    {
+      "id": "U06",
+      "area": "ui",
+      "title": "Automatic performance mode",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "Measure frame time for two seconds after load. If the device is slow, reduce pixel ratio and shadow-map size and say so in a small notice with an option to switch back.",
+      "acceptance": [
+        "Setting applied without rebuilding the model",
+        "Notice dismissible; tests for the threshold logic"
+      ]
+    },
+    {
+      "id": "U07",
+      "area": "ui",
+      "title": "Phone layout: part page as a bottom sheet",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "On narrow screens show the selected part page as a draggable bottom sheet over the 3D view (1:1 pointer tracking, spring settle, respects reduced motion) instead of a long page below.",
+      "acceptance": [
+        "Sheet can be dragged and released with momentum",
+        "Works with touch and keyboard"
+      ]
+    },
+    {
+      "id": "U08",
+      "area": "ui",
+      "title": "Search highlights parts in 3D",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "While the search box has text, dim the numbered pins that do not match and pulse the ones that do. Clearing the search restores everything.",
+      "acceptance": [
+        "Matching pins emphasised, others dimmed",
+        "No effect when the search is empty"
+      ]
+    },
+    {
+      "id": "U09",
+      "area": "ui",
+      "title": "Export the plate as an image",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "A button that saves the current 3D view with its numbered markers and a legend as a PNG (canvas composite, no new dependencies).",
+      "acceptance": [
+        "PNG contains view, numbers and legend",
+        "Works at devicePixelRatio > 1"
+      ]
+    },
+    {
+      "id": "U10",
+      "area": "ui",
+      "title": "Accessibility pass",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "Check focus order, visible focus, ARIA labels on the stage controls and pins, colour contrast, and reduced-motion handling for the camera spring and layer changes. Fix what you find.",
+      "acceptance": [
+        "Keyboard-only walkthrough of every control works",
+        "Findings and fixes listed in the PR description"
+      ]
+    },
+    {
+      "id": "C01",
+      "area": "content",
+      "title": "Glossary tab",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "Add a Glossary section (new view in src/views) with about 50 plain-language terms (BMEP, compression ratio, torque, valve overlap, knock, lambda\u2026), searchable, with terms linking to the parts that use them.",
+      "acceptance": [
+        "At least 50 terms, alphabetical, searchable",
+        "Each term links to at least one part where relevant"
+      ]
+    },
+    {
+      "id": "C02",
+      "area": "content",
+      "title": "Quiz of 20 questions linked to parts",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "Extend src/quiz.js to 20 questions drawn at random 5 per round, each explanation linking to the related part page. Keep the existing setupQuiz API.",
+      "acceptance": [
+        "20 questions, no duplicates, correct answers verified",
+        "Explanations link to part pages"
+      ]
+    },
+    {
+      "id": "C03",
+      "area": "content",
+      "title": "Symptom finder",
+      "size": "M",
+      "auto": true,
+      "depends": [],
+      "detail": "A \"Something sounds wrong\" page: choose a symptom (blue smoke, ticking, overheating\u2026) and see the likely parts from the `notice` text in anatomy.js, each linking to its part page. Build the symptom map as data with a test.",
+      "acceptance": [
+        "At least 12 symptoms mapped to real parts",
+        "Test checks every referenced part exists"
+      ]
+    },
+    {
+      "id": "C04",
+      "area": "content",
+      "title": "More tours: spark and start-up",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add \"Follow the spark\" (petrol only) and \"Start the engine\" tours to src/data/layers.js and the tour chip row. Existing tours must keep working for all engines.",
+      "acceptance": [
+        "Both tours run on every applicable engine",
+        "Tour tests extended"
+      ]
+    },
+    {
+      "id": "C05",
+      "area": "content",
+      "title": "Per-engine notes",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add a short \"what makes this engine different\" paragraph to each engine in src/data/engines.js (`notes`) and show it in the \"This engine\" card.",
+      "acceptance": [
+        "Every engine has notes of at least 40 characters",
+        "Shown in the UI"
+      ]
+    },
+    {
+      "id": "C06",
+      "area": "content",
+      "title": "Learn tab: how to read this atlas",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add a short illustrated guide at the top of Learn: what the numbers and colours mean, how layers and tours work.",
+      "acceptance": [
+        "Guide present and accurate to the current UI",
+        "No layout regressions on phone width"
+      ]
+    },
+    {
+      "id": "Q01",
+      "area": "quality",
+      "title": "Split the JavaScript bundle",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Load Learn, Compare and the audio module with dynamic import() so the first load is smaller. Check the built output sizes and report before/after.",
+      "acceptance": [
+        "Entry chunk smaller than 400 kB",
+        "All tabs and sound still work"
+      ]
+    },
+    {
+      "id": "Q02",
+      "area": "quality",
+      "title": "Unit tests for UI logic",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Extract the pin de-overlap function, the tour-step filtering and the layer logic from main.js into small modules and cover them with tests.",
+      "acceptance": [
+        "Logic moved without behaviour change",
+        "New tests pass"
+      ]
+    },
+    {
+      "id": "Q03",
+      "area": "quality",
+      "title": "Visual regression check in CI",
+      "size": "L",
+      "auto": false,
+      "depends": [],
+      "detail": "Headless screenshots of each engine and tab compared against stored baselines. Needs a new dev dependency (puppeteer) and CI changes, so it must be done by a person.",
+      "acceptance": [
+        "CI fails when a screen changes unexpectedly"
+      ]
+    },
+    {
+      "id": "E07",
+      "area": "engine",
+      "title": "4.0L V8 (large pickup / performance car)",
+      "size": "L",
+      "auto": false,
+      "depends": [],
+      "detail": "Add a 4.0 L 90\u00b0 V8 (id `v8`). The existing layout code handles only 60\u00b0 V6 pin phasing; extend `makeLayout` for a cross-plane V8 (firing order 1-8-4-3-6-5-7-2) without changing the results for the existing engines. Add layout tests for the new case.",
+      "acceptance": [
+        "makeLayout supports eight cylinders in two 90\u00b0 banks",
+        "Existing engines produce identical layouts (tests prove it)",
+        "New engine passes all guard tests"
+      ]
+    },
+    {
+      "id": "E08",
+      "area": "engine",
+      "title": "2.0L flat-four boxer",
+      "size": "L",
+      "auto": false,
+      "depends": [],
+      "detail": "Needs a new horizontally opposed layout in makeLayout and the 3D builder (cylinders lying along \u00b1Z, opposed crank pins). This is a design task, so a human or an interactive session should plan it first.",
+      "acceptance": [
+        "New layout kind `flat` supported end to end",
+        "All tests pass; model reviewed visually"
+      ]
+    },
+    {
+      "id": "E09",
+      "area": "engine",
+      "title": "1.0L turbo three-cylinder petrol",
+      "size": "L",
+      "auto": false,
+      "depends": [],
+      "detail": "Petrol turbo support: the physics `boostMax` is only used for diesels (turbo lag and boost map). Extend it to petrol, show the turbocharger and intercooler on petrol engines that have boostMax > 0, and add the engine.",
+      "acceptance": [
+        "Petrol turbo physics tested",
+        "Catalog turbo parts shown for turbo petrol engines",
+        "Engine added"
+      ]
+    },
+    {
+      "id": "E10",
+      "area": "engine",
+      "title": "1.8L hybrid (Atkinson-cycle) four",
+      "size": "L",
+      "auto": false,
+      "depends": [],
+      "detail": "Atkinson-cycle valve timing (late intake closing) and a simple electric-assist torque fill at low rpm. Plan with a human first.",
+      "acceptance": [
+        "Late-intake-closing timing modelled and tested",
+        "Engine added"
+      ]
+    }
+  ]
+}

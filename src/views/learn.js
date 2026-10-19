@@ -16,7 +16,7 @@ export function mountLearn(root, { openSystem }) {
   root.innerHTML = `
   <section class="page learn">
     <header class="pageHead"><h2 class="cap">Learn</h2><h1>One cycle.<br>Two turns of the crank.</h1>
-      <p>Drag the slider and watch a single cylinder breathe, squeeze, burn and exhale. The loop on the right is the same pressure and volume the Engine tab plots.</p></header>
+      <p>Drag the slider and watch a single cylinder breathe, squeeze, burn and exhale. The loop on the right is the same pressure and volume you can watch live in the Engine tab once you press Run engine.</p></header>
     <div class="lab">
       <div class="labFig"><svg id="lSvg" viewBox="0 0 240 290" role="img" aria-label="Single cylinder schematic"></svg>
         <label class="scrub"><span>Crank angle</span><output id="lDeg"></output><input id="lAngle" type="range" min="0" max="719" value="20"></label></div>

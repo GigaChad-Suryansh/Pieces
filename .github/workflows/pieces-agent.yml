@@ -1,0 +1,343 @@
+name: Pieces Autonomous Developer
+
+on:
+  schedule:
+    # Daily at 03:00 UTC
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      item:
+        description: "Roadmap item id to run (e.g. E01). Leave empty for the next eligible item."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  issues: write
+
+concurrency:
+  group: pieces-autonomous-developer
+  cancel-in-progress: false
+
+jobs:
+  autonomous-maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate roadmap before run
+        run: node scripts/validate-roadmap.mjs
+
+      - name: Record baseline test and build results
+        id: baseline
+        shell: bash
+        run: |
+          set +e
+          npm test > /tmp/pieces-baseline-tests.log 2>&1
+          test_exit=$?
+          npm run build > /tmp/pieces-baseline-build.log 2>&1
+          build_exit=$?
+          {
+            echo "## Autonomous agent baseline"
+            echo "- Tests exit code: $test_exit"
+            echo "- Build exit code: $build_exit"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "test_exit=$test_exit" >> "$GITHUB_OUTPUT"
+          echo "build_exit=$build_exit" >> "$GITHUB_OUTPUT"
+
+      # Checks the API key and finds a model that really has free quota before the agent starts.
+      - name: Select a working Gemini model
+        id: pick
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+        run: node scripts/pick-gemini-model.mjs
+
+      - name: Prepare agent brief
+        id: brief
+        env:
+          TEST_EXIT: ${{ steps.baseline.outputs.test_exit }}
+          BUILD_EXIT: ${{ steps.baseline.outputs.build_exit }}
+          FORCE_ITEM: ${{ inputs.item }}
+        run: node scripts/agent-brief.mjs
+
+      - name: Run Gemini CLI developer
+        id: gemini
+        continue-on-error: true
+        if: steps.pick.outcome == 'success' && steps.brief.outputs.prompt != ''
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: "true"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: ${{ steps.pick.outputs.model }}
+          upload_artifacts: true
+          gemini_debug: true
+          prompt: |
+            You are the repository's autonomous engine-atlas developer. Follow GEMINI.md and the brief below exactly.
+            Never weaken tests. Do not commit, push, create branches, or open PRs; the workflow makes the PR.
+
+            ${{ steps.brief.outputs.prompt }}
+          settings: |
+            {
+              "model": { "maxSessionTurns": 30 },
+              "tools": {
+                "core": ["run_shell_command", "read_file", "write_file", "replace"],
+                "allowed": [
+                  "read_file", "write_file", "replace",
+                  "run_shell_command(npm)", "run_shell_command(node)", "run_shell_command(npx)",
+                  "run_shell_command(ls)", "run_shell_command(cat)", "run_shell_command(head)",
+                  "run_shell_command(tail)", "run_shell_command(grep)", "run_shell_command(find)",
+                  "run_shell_command(wc)", "run_shell_command(git status)", "run_shell_command(git diff)"
+                ]
+              },
+              "telemetry": { "enabled": false }
+            }
+      # Free-tier quota is per model: if the first attempt failed, try the fallback model once.
+      - name: Retry Gemini CLI developer with fallback model
+        id: gemini_retry
+        if: always() && steps.gemini.outcome == 'failure' && steps.pick.outputs.fallback_model != ''
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: "true"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: ${{ steps.pick.outputs.fallback_model }}
+          upload_artifacts: true
+          gemini_debug: true
+          prompt: |
+            You are the repository's autonomous engine-atlas developer. Follow GEMINI.md and the brief below exactly.
+            Never weaken tests. Do not commit, push, create branches, or open PRs; the workflow makes the PR.
+            NOTE: an earlier attempt in this run failed part-way. Run `git status --short` first and continue from what is already on disk.
+
+            ${{ steps.brief.outputs.prompt }}
+          settings: |
+            {
+              "model": { "maxSessionTurns": 30 },
+              "tools": {
+                "core": ["run_shell_command", "read_file", "write_file", "replace"],
+                "allowed": [
+                  "read_file", "write_file", "replace",
+                  "run_shell_command(npm)", "run_shell_command(node)", "run_shell_command(npx)",
+                  "run_shell_command(ls)", "run_shell_command(cat)", "run_shell_command(head)",
+                  "run_shell_command(tail)", "run_shell_command(grep)", "run_shell_command(find)",
+                  "run_shell_command(wc)", "run_shell_command(git status)", "run_shell_command(git diff)"
+                ]
+              },
+              "telemetry": { "enabled": false }
+            }
+      # The agent must not change its own automation or the dependency set.
+      - name: Revert any agent changes to protected files
+        if: always()
+        shell: bash
+        run: |
+          git checkout -- .github scripts GEMINI.md package.json package-lock.json vite.config.js vite.config.ts roadmap/roadmap.json roadmap/progress.json 2>/dev/null || true
+          git clean -fdq -- .github scripts 2>/dev/null || true
+
+      - name: Verify agent output
+        id: verify1
+        if: always()
+        env:
+          VERIFY_LABEL: after agent
+        run: node scripts/verify.mjs
+
+      # One repair attempt, fed the real test/compiler errors.
+      - name: Repair failed checks with Gemini
+        id: repair
+        if: always() && steps.verify1.outputs.ok == 'false' && steps.verify1.outputs.changed == 'true' && steps.pick.outcome == 'success'
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: "true"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: ${{ steps.pick.outputs.fallback_model || steps.pick.outputs.model }}
+          upload_artifacts: true
+          gemini_debug: true
+          prompt: |
+            You are the repository's autonomous engine-atlas developer. Follow GEMINI.md.
+            The work currently in the working tree FAILS the checks. Fix ONLY these errors; do not add features, do not delete or weaken tests.
+            Run `npm test` and `npm run build` until both pass. Do not commit, push, or touch .github/, scripts/, GEMINI.md or package files.
+
+            ## Errors to fix
+            ${{ steps.verify1.outputs.errors }}
+
+            ${{ steps.brief.outputs.prompt }}
+          settings: |
+            {
+              "model": { "maxSessionTurns": 30 },
+              "tools": {
+                "core": ["run_shell_command", "read_file", "write_file", "replace"],
+                "allowed": [
+                  "read_file", "write_file", "replace",
+                  "run_shell_command(npm)", "run_shell_command(node)", "run_shell_command(npx)",
+                  "run_shell_command(ls)", "run_shell_command(cat)", "run_shell_command(head)",
+                  "run_shell_command(tail)", "run_shell_command(grep)", "run_shell_command(find)",
+                  "run_shell_command(wc)", "run_shell_command(git status)", "run_shell_command(git diff)"
+                ]
+              },
+              "telemetry": { "enabled": false }
+            }
+      - name: Revert protected files again
+        if: always()
+        shell: bash
+        run: |
+          git checkout -- .github scripts GEMINI.md package.json package-lock.json vite.config.js vite.config.ts roadmap/roadmap.json roadmap/progress.json 2>/dev/null || true
+          git clean -fdq -- .github scripts 2>/dev/null || true
+
+      - name: Final verification
+        id: verify
+        if: always()
+        env:
+          VERIFY_LABEL: final
+        run: node scripts/verify.mjs
+
+      # Never ship work that does not pass: drop it and record the failure.
+      - name: Discard unverified agent work
+        id: discard
+        if: always() && steps.verify.outputs.ok == 'false' && steps.verify.outputs.changed == 'true'
+        env:
+          ITEM_ID: ${{ steps.brief.outputs.item_id }}
+          FAIL_NOTE: ${{ steps.verify.outputs.errors }}
+        run: node scripts/discard-agent-work.mjs
+
+      # Only the workflow marks an item complete, and only when verified work really changed files.
+      - name: Record progress
+        id: record
+        if: always() && steps.verify.outputs.ok == 'true'
+        env:
+          ITEM_ID: ${{ steps.brief.outputs.item_id }}
+          VERIFY_OK: ${{ steps.verify.outputs.ok }}
+          CHANGED: ${{ steps.verify.outputs.changed }}
+        run: node scripts/record-progress.mjs
+
+      - name: Append daily run log
+        if: always()
+        shell: bash
+        env:
+          ITEM_ID: ${{ steps.brief.outputs.item_id }}
+          ITEM_TITLE: ${{ steps.brief.outputs.item_title }}
+          GEMINI_OUTCOME: ${{ steps.gemini_retry.outcome == 'success' && 'success (fallback model)' || (steps.pick.outcome != 'success' && 'skipped (no working model)') || steps.gemini.outcome }}
+          GEMINI_MODEL_USED: ${{ steps.gemini_retry.outcome == 'success' && steps.pick.outputs.fallback_model || steps.pick.outputs.model }}
+          VERIFY_OK: ${{ steps.verify.outputs.ok }}
+          REPAIR_OUTCOME: ${{ steps.repair.outcome }}
+          DISCARDED_FILES: ${{ steps.discard.outputs.discarded_files }}
+          GEMINI_SUMMARY: ${{ steps.gemini.outputs.summary }}
+        run: |
+          set -euo pipefail
+          mkdir -p roadmap
+          [ -f roadmap/daily-log.md ] || printf '# Pieces — Daily Agent Log\n\n' > roadmap/daily-log.md
+          day_number=$(($(grep -c '^## Day ' roadmap/daily-log.md || true) + 1))
+          {
+            printf '## Day %s — %s\n\n' "$day_number" "$(date -u '+%Y-%m-%d')"
+            printf -- '- **Run:** [#%s](https://github.com/%s/actions/runs/%s) (%s)\n' "$GITHUB_RUN_NUMBER" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_EVENT_NAME"
+            printf -- '- **Item:** %s %s\n' "${ITEM_ID:-none}" "${ITEM_TITLE:-}"
+            printf -- '- **Gemini:** %s (%s)\n' "$GEMINI_OUTCOME" "${GEMINI_MODEL_USED:-none}"
+            printf -- '- **Independent verification (roadmap + tests + build):** %s\n' "$([ "$VERIFY_OK" = "true" ] && echo passed || echo FAILED)"
+            printf -- '- **Repair attempt:** %s\n' "${REPAIR_OUTCOME:-skipped}"
+            [ -z "${DISCARDED_FILES:-}" ] || printf -- '- **Work discarded:** %s\n' "$DISCARDED_FILES"
+            [ -z "${GEMINI_SUMMARY:-}" ] || printf -- '- **Summary:** %s\n' "$(printf '%s' "$GEMINI_SUMMARY" | tr '\n' ' ' | cut -c1-800)"
+            printf '\n---\n\n'
+          } >> roadmap/daily-log.md
+
+      - name: Validate roadmap after run
+        if: always()
+        run: node scripts/validate-roadmap.mjs
+
+      - name: Open or update review pull request
+        id: pr
+        if: always()
+        continue-on-error: true
+        uses: peter-evans/create-pull-request@v7
+        with:
+          # Optional: a fine-grained PAT as secret PR_TOKEN avoids enabling the repo setting below.
+          token: ${{ secrets.PR_TOKEN || secrets.GITHUB_TOKEN }}
+          branch: automation/pieces-daily
+          delete-branch: true
+          title: "chore: Pieces daily agent (${{ steps.brief.outputs.item_id }})"
+          commit-message: "chore: Pieces daily agent (${{ steps.brief.outputs.item_id }}) and run log"
+          body: |
+            Automated proposal from the daily Gemini developer workflow.
+
+            - Item: **${{ steps.brief.outputs.item_id }} — ${{ steps.brief.outputs.item_title }}**
+            - Roadmap validation, tests and build were re-run by the workflow, independent of the agent.
+            - Automated checks cannot see the screen: please look at the preview before merging anything visual.
+            - Nothing is deployed until this is merged to main.
+
+      # Auto-merge is OFF unless the repository variable AUTO_MERGE is set to 'true'.
+      - name: Merge the pull request (verified work only)
+        id: automerge
+        if: >-
+          always() && steps.pr.outcome == 'success'
+          && steps.verify.outputs.ok == 'true'
+          && steps.pr.outputs.pull-request-number != ''
+          && steps.pr.outputs.pull-request-operation != 'closed'
+          && vars.AUTO_MERGE == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.PR_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+        run: |
+          gh api -X PUT "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/merge" -f merge_method=squash \
+            -f commit_title="chore: Pieces daily agent update (verified)"
+          # Pushes made with GITHUB_TOKEN do not trigger other workflows, so start the deploy ourselves.
+          gh workflow run deploy.yml --ref main
+
+      - name: Post daily report
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GEMINI_OK: ${{ steps.gemini.outcome == 'success' || steps.gemini_retry.outcome == 'success' }}
+          PICK_OK: ${{ steps.pick.outcome == 'success' }}
+          VERIFIED: ${{ steps.verify.outputs.ok }}
+          CHANGED: ${{ steps.verify.outputs.changed }}
+          MERGED: ${{ steps.automerge.outcome == 'success' }}
+          DISCARDED: ${{ steps.discard.outcome == 'success' }}
+          ITEM_ID: ${{ steps.brief.outputs.item_id }}
+        continue-on-error: true
+        run: |
+          if [ "$MERGED" = "true" ]; then icon="✅"; msg="Item ${ITEM_ID} was built, verified, merged and a deploy started."
+          elif [ "$PICK_OK" != "true" ]; then icon="⏸️"; msg="No Gemini model was available (likely the free daily quota). Nothing changed."
+          elif [ "$DISCARDED" = "true" ]; then icon="⚠️"; msg="Gemini's work for ${ITEM_ID} failed the checks and was discarded. Nothing broken was proposed."
+          elif [ -z "$ITEM_ID" ]; then icon="🏁"; msg="No eligible roadmap item. Remaining items need a person."
+          elif [ "$GEMINI_OK" != "true" ]; then icon="❌"; msg="Gemini failed on every attempt. Nothing changed."
+          elif [ "$VERIFIED" = "true" ] && [ "$CHANGED" != "true" ]; then icon="ℹ️"; msg="Run finished with no code changes."
+          else icon="👀"; msg="Item ${ITEM_ID} is verified. Please review the open pull request (look at the preview if it is visual)."
+          fi
+          body="@${OWNER} ${icon} **$(date -u +%Y-%m-%d)** — ${msg}"$'\n\n'"[Run details](${RUN_URL})"
+          num=$(gh issue list --state open --search '"Daily agent report" in:title' --json number --jq '.[0].number' || true)
+          if [ -z "$num" ]; then
+            num=$(gh issue create --title "Daily agent report" --body "One comment per daily run of the Pieces agent. Subscribe to get each report." | grep -o '[0-9]*$')
+          fi
+          gh issue comment "$num" --body "$body"
+
+      - name: Explain pull request failure
+        if: always() && steps.pr.outcome == 'failure'
+        run: |
+          echo "::error title=Enable PR creation::Settings > Actions > General > Workflow permissions > tick 'Allow GitHub Actions to create and approve pull requests'. The branch automation/pieces-daily already has the changes."
+          exit 1
+
+      - name: Fail if no Gemini attempt succeeded
+        if: always() && steps.gemini.outcome == 'failure' && steps.gemini_retry.outcome != 'success'
+        run: |
+          echo "::error::Gemini failed on every attempt. See roadmap/daily-log.md on the automation branch."
+          exit 1

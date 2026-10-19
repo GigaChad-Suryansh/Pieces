@@ -30,7 +30,7 @@ describe('layout', () => {
       const l = makeLayout(ENGINES[id]);
       const phases = l.cylinders.map((c) => c.phase).sort((a, b) => a - b);
       expect(new Set(phases).size).toBe(l.cylinders.length);
-      phases.forEach((ph, i) => expect(ph).toBeCloseTo((i * 720) / phases.length, 6));
+      phases.forEach((ph, i) => expect(((phases[(i + 1) % phases.length] - ph + 720) % 720)).toBeCloseTo(720 / phases.length, 6));
     });
   }
 });
@@ -90,4 +90,62 @@ describe('catalogue', () => {
     expect(partsFor(ENGINES.diesel).some((p) => p.name === 'Spark plug')).toBe(false);
     expect(partsFor(ENGINES.i4).some((p) => p.name === 'Turbocharger')).toBe(false);
   });
+});
+
+import { ANATOMY } from '../src/data/anatomy.js';
+describe('anatomy data', () => {
+  it('every catalogue part has complete anatomy and valid neighbours', () => {
+    const names = new Set(CATALOG.map((p) => p.name));
+    for (const p of CATALOG) {
+      const a = ANATOMY[p.name];
+      expect(a, p.name).toBeDefined();
+      for (const k of ['does', 'made', 'fails', 'notice']) expect(a[k].length, `${p.name}.${k}`).toBeGreaterThan(20);
+      expect(a.life.length, `${p.name}.life`).toBeGreaterThan(6);
+      expect(a.links.length, p.name).toBeGreaterThan(0);
+      for (const l of a.links) expect(names.has(l), `${p.name} -> ${l}`).toBe(true);
+    }
+    expect(Object.keys(ANATOMY).length).toBe(CATALOG.length);
+  });
+});
+
+import { LAYERS, TOURS, tourSteps, hiddenAt, removalStep } from '../src/data/layers.js';
+describe('layers and tours', () => {
+  const names = new Set(CATALOG.map((p) => p.name));
+  it('layers only name catalogue parts, and peel cumulatively', () => {
+    for (const l of LAYERS) for (const n of l.remove) expect(names.has(n), n).toBe(true);
+    expect(hiddenAt(0).size).toBe(0);
+    expect(hiddenAt(LAYERS.length - 1).has('Engine block')).toBe(true);
+    expect(hiddenAt(LAYERS.length - 1).has('Piston')).toBe(false);
+    expect(removalStep('Piston')).toBe(0);
+    expect(removalStep('Cylinder head')).toBe(4);
+  });
+  it('every tour has steps for every engine, all naming catalogue parts', () => {
+    for (const [id, t] of Object.entries(TOURS)) for (const e of Object.values(ENGINES)) {
+      const steps = tourSteps(id, e);
+      expect(steps.length, `${id}/${e.id}`).toBeGreaterThan(3);
+      for (const s of steps) { expect(names.has(s.part), s.part).toBe(true); expect(partsFor(e).some((p) => p.name === s.part), `${id}/${e.id}/${s.part}`).toBe(true); }
+    }
+  });
+});
+
+import { buildEngine } from '../src/engine3d/build.js';
+describe('engine definitions (guards for new engines)', () => {
+  const REQUIRED = ['id', 'short', 'name', 'sub', 'blurb', 'where', 'layout', 'cylinders', 'valvesPerCylinder', 'fuel', 'bore', 'stroke', 'rodRatio', 'compression', 've', 'veRpm', 'redline', 'ratedTorque', 'inertia', 'idleRpm', 'fmep', 'afr', 'boostMax', 'firingOrder', 'intake', 'exhaust'];
+  for (const [key, e] of Object.entries(ENGINES)) {
+    it(`${key}: has every required field and a consistent firing order`, () => {
+      for (const f of REQUIRED) expect(e[f], `${key}.${f}`).toBeDefined();
+      expect(e.id).toBe(key);
+      expect([...e.firingOrder].sort((a, b) => a - b)).toEqual(Array.from({ length: e.cylinders }, (_, i) => i + 1));
+      expect(['petrol', 'diesel']).toContain(e.fuel);
+      expect(e.where.length).toBeGreaterThan(20);
+    });
+    it(`${key}: the 3D model builds with only catalogue parts and sane bounds`, () => {
+      const m = buildEngine(e);
+      expect(m.parts.length).toBeGreaterThan(150);
+      const names = new Set(CATALOG.map((p) => p.name));
+      for (const p of m.parts) expect(names.has(p.userData.part), `${key}: unknown part ${p.userData.part}`).toBe(true);
+      const s = m.bounds.size;
+      for (const v of [s.x, s.y, s.z]) { expect(Number.isFinite(v)).toBe(true); expect(v).toBeGreaterThan(3); expect(v).toBeLessThan(60); }
+    });
+  }
 });

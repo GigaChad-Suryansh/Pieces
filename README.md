@@ -1,20 +1,21 @@
 # Pieces — Engineverse
 
-An interactive 3D engine playground. Orbit detailed engines, scrub the four-stroke cycle, hear the engine, and compare four designs built on one shared physics model.
-
-**Live site:** deployed from `main` to GitHub Pages.
+An anatomy atlas of everyday car engines, in the spirit of a human-anatomy atlas: every part is modelled in 3D, numbered, and explained in plain language, so anyone can learn what is under the bonnet of the car they use.
 
 ## What's in it
 
-- **Four engines** — 2.0 L inline-4, 3.0 L V6 (60°, split crank pins), 2.2 L turbo-diesel and a 1.0 L high-revving motorcycle four. Each is built from ~300–450 individual parts (pistons with ring packs, I-beam rods, counterweighted cranks, four-valve heads with springs and buckets, cam lobes, timing chain, manifolds, turbo, radiator and more).
-- **Physics tied to geometry** — bore, stroke, rod ratio, compression ratio, valve timing and firing order are defined once (`src/data/engines.js`) and drive both the equations and the 3D model. Slider-crank kinematics are exact; in-cylinder pressure comes from a polytropic compression and Wiebe heat-release model; gas exchange, friction, volumetric efficiency, turbo lag and an idle governor are included.
-- **Engine tab** — click any part for a leader-line callout and description; Explode, Cutaway, X-ray and Isolate; live tachometer, readouts and drive controls; cycle ribbon you can scrub; pressure–crank-angle and pressure–volume charts; a full-throttle dyno pull.
-- **Sound** — engine audio synthesised from the simulated cylinder pressure (firing order and combustion strength shape the tone). Off by default; use the *Sound* button.
-- **Learn** — a one-cylinder schematic you can scrub, the P–V loop, ten engine systems and a quiz.
+- **Four everyday engines** — a 1.2 L three-cylinder (city cars), a 2.0 L inline-four (family cars), a 3.0 L 60° V6 (large sedans and SUVs) and a 2.2 L turbo-diesel (SUVs and vans). Each is built from roughly 260–460 individual parts: pistons with ring packs, I-beam rods, counterweighted cranks, four-valve heads with springs and buckets, cam lobes, timing chain, manifolds, radiator and more.
+- **Numbered plate** — every part carries a numbered marker in the colour of its system (structure, motion, valvetrain, timing, air and fuel, ignition, cooling, lubrication, exhaust, starting). A grouped index with the same numbers sits beside it, with search and system filters.
+- **A page for every part** — what it's made of, what it does, how it fails, what you'd notice as a driver, how long it lasts, and which parts it sits next to (click through to walk around the engine). Step through the index with the buttons or the `[` and `]` keys.
+- **Layers** — a slider peels the engine apart: accessories, valve cover, camshafts and timing drive, cylinder head, block, down to the moving parts.
+- **Guided tours** — follow the air, fuel, oil, coolant or exhaust; the camera flies from part to part with a short caption.
+- **View tools** — orbit and zoom, front/side/top views, explode, cutaway, X-ray, isolate.
+- **Run engine** *(optional)* — start the engine to see a live tachometer, readouts, a scrubbable 720° cycle ribbon, pressure and P–V charts, a dyno pull and synthesised engine sound (off by default). The physics is tied to the same geometry as the 3D model.
+- **Learn** — a one-cylinder schematic you can scrub through the four strokes, the ten systems and a quiz.
 - **Compare** — torque and power curves for all four engines plus a spec table.
-- Responsive down to phone width, keyboard accessible, honours reduced-motion and reduced-transparency settings.
+- Responsive, keyboard accessible, honours reduced-motion and reduced-transparency settings.
 
-The model is an educational abstraction, not manufacturer CAD. Figures are indicative, not calibrated.
+The models are educational abstractions, not manufacturer CAD, and the physics figures are indicative, not calibrated.
 
 ## Run it
 Link to Site - https://gigachad-suryansh.github.io/Pieces/
@@ -22,7 +23,7 @@ Link to Site - https://gigachad-suryansh.github.io/Pieces/
 ```bash
 npm install
 npm run dev      # development server
-npm test         # physics, layout and sound tests (vitest)
+npm test         # data, physics, layout and sound tests (vitest)
 npm run build    # production build in dist/
 ```
 
@@ -34,6 +35,8 @@ Add `?debug` to the URL to expose `window.__pieces` (state, engine, camera, phys
 | --- | --- |
 | `src/data/engines.js` | Engine specs and cylinder layout (single source of truth) |
 | `src/data/catalog.js` | Parts catalogue and system colours |
+| `src/data/anatomy.js` | Plain-language anatomy for every part |
+| `src/data/layers.js` | Peel-away layers and guided tours |
 | `src/physics.js` | Engine physics and `steadyState()` for power curves |
 | `src/engine3d/` | Procedural geometry, materials, studio lighting and assembly |
 | `src/scene.js` | Renderer, camera moves, picking |
@@ -52,3 +55,5 @@ Catalogue descriptions were researched from:
 - Educational-Animation.org — interactive four-stroke component/function reference.
 - Government of India / Skill Development Institute curriculum material covering IC-engine components and cooling systems.
 - Three.js documentation for WebGLRenderer, OrbitControls and Raycaster.
+
+Service lives and failure notes in `anatomy.js` are general, rounded figures for typical passenger cars; check the manual for your own vehicle.

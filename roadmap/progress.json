@@ -1,0 +1,10 @@
+{
+  "completed_ids": [],
+  "blocked": [],
+  "consecutive_failures": 0,
+  "last_run": null,
+  "last_outcome": null,
+  "current_task": null,
+  "last_failure": null,
+  "notes": "No automated runs yet."
+}

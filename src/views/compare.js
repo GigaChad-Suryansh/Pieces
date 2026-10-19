@@ -1,10 +1,12 @@
 import { steadyState } from '../physics.js';
 import { drawCurves } from '../ui/charts.js';
 
-const COLORS = { i4: '#2f7fe0', v6: '#8a5cc2', diesel: '#c47a14', bike: '#0e8f8a' };
+// Colours are assigned by position, so adding an engine to ENGINES needs no change here.
+const PALETTE = ['#2f7fe0', '#8a5cc2', '#c47a14', '#0e8f8a', '#d9472b', '#4f8f3a', '#c2578f', '#5b6770', '#b08a1e', '#2a9d8f'];
 
 export function mountCompare(root, { ENGINES, pick }) {
   const ids = Object.keys(ENGINES);
+  const COLORS = Object.fromEntries(ids.map((id, i) => [id, PALETTE[i % PALETTE.length]]));
   const on = new Set(ids);
   let metric = 'both';
   // Sweep every engine once at full throttle.
