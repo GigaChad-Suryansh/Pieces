@@ -11,6 +11,8 @@
 6. Only the workflow marks an item complete, and only for verified work that changed files.
 7. A PR `automation/pieces-daily` is opened and a comment is posted on the "Daily agent report" issue.
 
+Engines are built in three small stages (announce → real-world figures → publish). While an engine is in progress the site shows it as "Building n/3" in the picker. Fixes and improvements are interleaved between the stages.
+
 Items with `"auto": false` need a person (real-device checks, listening tests, art direction).
 
 ## One-time setup (repository settings, done by the owner)

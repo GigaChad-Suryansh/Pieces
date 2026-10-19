@@ -3,6 +3,7 @@ import '@fontsource-variable/ibm-plex-sans';
 import './style.css';
 import { EnginePhysics } from './physics.js';
 import { ENGINES } from './data/engines.js';
+import { UPCOMING, STAGES } from './data/upcoming.js';
 import { SYSTEMS, SYSTEM_COLOR, PART_INFO, partsFor } from './data/catalog.js';
 import { ANATOMY } from './data/anatomy.js';
 import { LAYERS, TOURS, hiddenAt, removalStep, tourSteps } from './data/layers.js';
@@ -175,7 +176,8 @@ function loadEngine(id) {
 // ---------------------------------------------------------------------------------------------------- rail
 function renderEngineList() {
   $('#engineList').innerHTML = Object.values(ENGINES).map((e) =>
-    `<button data-engine="${e.id}" aria-pressed="${e.id === state.engine}"><b>${esc(e.short)}</b><span>${esc(e.name)}<small>${esc(e.sub)}</small></span></button>`).join('');
+    `<button data-engine="${e.id}" aria-pressed="${e.id === state.engine}"><b>${esc(e.short)}</b><span>${esc(e.name)}<small>${esc(e.sub)}</small></span></button>`).join('') +
+    UPCOMING.map((u) => `<div class="building" role="note" title="${esc(STAGES[u.done] || '')}"><b>${esc(u.short)}</b><span>${esc(u.name)}<small>${esc(u.sub)}</small></span><em>Building ${u.done + 1}/${STAGES.length}</em><i style="--p:${Math.round(((u.done + 1) / STAGES.length) * 100)}%"></i></div>`).join('');
   const chips = ['All', ...SYSTEMS.map((s) => s.id)];
   $('#chips').innerHTML = chips.map((c) =>
     `<button data-system="${esc(c)}" aria-pressed="${c === state.system}" style="--c:${SYSTEM_COLOR[c] || 'var(--ink)'}"><i></i>${esc(c)}</button>`).join('');

@@ -10,137 +10,183 @@
   ],
   "items": [
     {
-      "id": "E01",
+      "id": "E01a",
       "area": "engine",
-      "title": "1.5L petrol four (compact sedan / hatchback)",
+      "title": "1.5L petrol four: announce it as \"Building\"",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add a naturally aspirated 1.5 L inline-four to src/data/engines.js (id `i4s`). Use realistic figures: bore about 73–78 mm, stroke about 80–88 mm, compression 10–11.5:1, redline 6,300–6,800 rpm, firing order 1-3-4-2. Write a `where` line naming the kind of everyday car it is found in.",
+      "detail": "Add an entry for the 1.5L petrol four (compact sedans and hatchbacks) to UPCOMING in src/data/upcoming.js with id `i4s`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
       "acceptance": [
-        "Entry added with every field the engine-definition test requires",
-        "`npm test` passes, including the new engine in the 3D build, layout and physics tests",
-        "Its peak torque and power in the Compare tab look plausible for a 1.5 L petrol (about 70–85 kW)"
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
       ]
     },
     {
-      "id": "E02",
+      "id": "E01b",
       "area": "engine",
-      "title": "2.5L petrol four (mid-size sedan)",
+      "title": "1.5L petrol four: draft the real-world figures",
       "size": "S",
       "auto": true,
-      "depends": [],
-      "detail": "Add a naturally aspirated 2.5 L inline-four (id `i4m`): bore about 87–90 mm, stroke about 94–100 mm, compression 10.5–13:1. Long stroke means lower redline (about 6,500 rpm).",
+      "depends": [
+        "E01a"
+      ],
+      "detail": "On the `i4s` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 1.5L petrol four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
       "acceptance": [
-        "Entry added and all tests pass",
-        "Torque curve peaks lower in the rev range than the 2.0 L inline-four"
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
       ]
     },
     {
-      "id": "E03",
+      "id": "E01c",
       "area": "engine",
-      "title": "1.5L turbo-diesel four (small SUV / hatchback)",
-      "size": "S",
-      "auto": true,
-      "depends": [],
-      "detail": "Add a 1.5 L turbo-diesel inline-four (id `d15`) modelled on the existing diesel entry: compression 15.5–17:1, redline 4,500–5,000 rpm, boostMax 0.8–1.2 bar.",
-      "acceptance": [
-        "Entry added and all tests pass",
-        "Diesel-only parts (turbocharger, intercooler, glow plug) appear; spark plug and coil do not"
-      ]
-    },
-    {
-      "id": "E04",
-      "area": "engine",
-      "title": "2.0L turbo-diesel four (SUV / pickup)",
-      "size": "S",
-      "auto": true,
-      "depends": [],
-      "detail": "Add a 2.0 L turbo-diesel inline-four (id `d20`). Peak torque should clearly exceed the 1.5 L diesel; redline about 4,500 rpm.",
-      "acceptance": [
-        "Entry added and all tests pass",
-        "Compare tab shows it between the 1.5 L and 2.2 L diesels in torque"
-      ]
-    },
-    {
-      "id": "E05",
-      "area": "engine",
-      "title": "3.5L V6 (large SUV / minivan)",
-      "size": "S",
-      "auto": true,
-      "depends": [],
-      "detail": "Add a 3.5 L 60° V6 (id `v6l`) from the existing 3.0 L V6 entry with a larger bore and stroke. Keep firing order 1-6-3-5-2-4.",
-      "acceptance": [
-        "Entry added and all tests pass",
-        "3D model builds with six cylinders in two banks"
-      ]
-    },
-    {
-      "id": "E06",
-      "area": "engine",
-      "title": "3.0L inline-six (premium sedan)",
+      "title": "1.5L petrol four: publish it in the atlas",
       "size": "M",
       "auto": true,
-      "depends": [],
-      "detail": "Add a 3.0 L inline-six (id `i6`), firing order 1-5-3-6-2-4. Check the 3D builder handles six in-line cylinders: camera framing, crank pin phasing, and that bounds stay within the engine-definition test limits. Fix any layout bug you find in src/engine3d or src/data/engines.js.",
+      "depends": [
+        "E01b"
+      ],
+      "detail": "Move `i4s` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming compact sedans and hatchbacks), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs i4s` and keep torque and power plausible for the class.",
       "acceptance": [
-        "Entry added and all tests pass",
-        "Screenshot-free check: bounds and part names pass the guard tests",
-        "Firing events are evenly spread over 720°"
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
       ]
     },
     {
-      "id": "E07",
-      "area": "engine",
-      "title": "4.0L V8 (large pickup / performance car)",
-      "size": "L",
-      "auto": false,
+      "id": "F01",
+      "area": "quality",
+      "title": "Audit the audio at idle, road and power",
+      "size": "S",
+      "auto": true,
       "depends": [],
-      "detail": "Add a 4.0 L 90° V8 (id `v8`). The existing layout code handles only 60° V6 pin phasing; extend `makeLayout` for a cross-plane V8 (firing order 1-8-4-3-6-5-7-2) without changing the results for the existing engines. Add layout tests for the new case.",
+      "detail": "Check src/audio.js for any state in which an engine is silent or inaudibly quiet (idle, low rpm, each engine). Add a pure function for target loudness and unit-test that every engine at idle has at least 60% of its power-mode loudness.",
       "acceptance": [
-        "makeLayout supports eight cylinders in two 90° banks",
-        "Existing engines produce identical layouts (tests prove it)",
-        "New engine passes all guard tests"
+        "Loudness function with tests",
+        "No engine near-silent at idle"
       ]
     },
     {
-      "id": "E08",
+      "id": "E02a",
       "area": "engine",
-      "title": "2.0L flat-four boxer",
-      "size": "L",
-      "auto": false,
+      "title": "2.5L petrol four: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
       "depends": [],
-      "detail": "Needs a new horizontally opposed layout in makeLayout and the 3D builder (cylinders lying along ±Z, opposed crank pins). This is a design task, so a human or an interactive session should plan it first.",
+      "detail": "Add an entry for the 2.5L petrol four (mid-size sedans) to UPCOMING in src/data/upcoming.js with id `i4m`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
       "acceptance": [
-        "New layout kind `flat` supported end to end",
-        "All tests pass; model reviewed visually"
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
       ]
     },
     {
-      "id": "E09",
+      "id": "E02b",
       "area": "engine",
-      "title": "1.0L turbo three-cylinder petrol",
-      "size": "L",
-      "auto": false,
-      "depends": [],
-      "detail": "Petrol turbo support: the physics `boostMax` is only used for diesels (turbo lag and boost map). Extend it to petrol, show the turbocharger and intercooler on petrol engines that have boostMax > 0, and add the engine.",
+      "title": "2.5L petrol four: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E02a"
+      ],
+      "detail": "On the `i4m` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 2.5L petrol four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
       "acceptance": [
-        "Petrol turbo physics tested",
-        "Catalog turbo parts shown for turbo petrol engines",
-        "Engine added"
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
       ]
     },
     {
-      "id": "E10",
-      "area": "engine",
-      "title": "1.8L hybrid (Atkinson-cycle) four",
-      "size": "L",
-      "auto": false,
+      "id": "F02",
+      "area": "ui",
+      "title": "Check every part page for overflow and missing text",
+      "size": "S",
+      "auto": true,
       "depends": [],
-      "detail": "Atkinson-cycle valve timing (late intake closing) and a simple electric-assist torque fill at low rpm. Plan with a human first.",
+      "detail": "Write a test that every ANATOMY field renders without being empty and that no field is longer than 220 characters; shorten any that are.",
       "acceptance": [
-        "Late-intake-closing timing modelled and tested",
-        "Engine added"
+        "Test added",
+        "All entries pass"
+      ]
+    },
+    {
+      "id": "E02c",
+      "area": "engine",
+      "title": "2.5L petrol four: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E02b"
+      ],
+      "detail": "Move `i4m` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming mid-size sedans), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs i4m` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
+      ]
+    },
+    {
+      "id": "E03a",
+      "area": "engine",
+      "title": "1.5L turbo-diesel four: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 1.5L turbo-diesel four (small SUVs and hatchbacks) to UPCOMING in src/data/upcoming.js with id `d4s`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
+      ]
+    },
+    {
+      "id": "F03",
+      "area": "ui",
+      "title": "Show \"Found in\" for every engine in Compare",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add a \"Found in\" row to the Compare table from each engine `where`.",
+      "acceptance": [
+        "Row visible in Compare",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E03b",
+      "area": "engine",
+      "title": "1.5L turbo-diesel four: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E03a"
+      ],
+      "detail": "On the `d4s` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 1.5L turbo-diesel four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E03c",
+      "area": "engine",
+      "title": "1.5L turbo-diesel four: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E03b"
+      ],
+      "detail": "Move `d4s` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming small SUVs and hatchbacks), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs d4s` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
       ]
     },
     {
@@ -157,6 +203,36 @@
       ]
     },
     {
+      "id": "E04a",
+      "area": "engine",
+      "title": "2.0L turbo-diesel four: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 2.0L turbo-diesel four (SUVs and pickups) to UPCOMING in src/data/upcoming.js with id `d4m`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
+      ]
+    },
+    {
+      "id": "E04b",
+      "area": "engine",
+      "title": "2.0L turbo-diesel four: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E04a"
+      ],
+      "detail": "On the `d4m` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 2.0L turbo-diesel four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
+      ]
+    },
+    {
       "id": "P02",
       "area": "part",
       "title": "Add Dipstick and Oil filler cap",
@@ -167,6 +243,37 @@
       "acceptance": [
         "Both parts appear in the index and on the plate",
         "`npm test` passes (anatomy and guard tests)"
+      ]
+    },
+    {
+      "id": "E04c",
+      "area": "engine",
+      "title": "2.0L turbo-diesel four: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E04b"
+      ],
+      "detail": "Move `d4m` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming SUVs and pickups), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs d4m` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
+      ]
+    },
+    {
+      "id": "E05a",
+      "area": "engine",
+      "title": "3.5L V6: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 3.5L V6 (large SUVs and minivans) to UPCOMING in src/data/upcoming.js with id `v6l`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
       ]
     },
     {
@@ -183,6 +290,39 @@
       ]
     },
     {
+      "id": "E05b",
+      "area": "engine",
+      "title": "3.5L V6: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E05a"
+      ],
+      "detail": "On the `v6l` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 3.5L V6, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E05c",
+      "area": "engine",
+      "title": "3.5L V6: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E05b"
+      ],
+      "detail": "Move `v6l` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming large SUVs and minivans), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs v6l` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
+      ]
+    },
+    {
       "id": "P04",
       "area": "part",
       "title": "Add Knock sensor and Crankshaft position sensor",
@@ -192,6 +332,36 @@
       "detail": "Two small sensors: catalogue rows (system Ignition for knock, Timing for crank position), anatomy entries and 3D models. Mention in the anatomy what each tells the engine computer.",
       "acceptance": [
         "Both parts present in all engines",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E06a",
+      "area": "engine",
+      "title": "3.0L inline-six: announce it as \"Building\"",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "detail": "Add an entry for the 3.0L inline-six (premium sedans) to UPCOMING in src/data/upcoming.js with id `i6`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "acceptance": [
+        "Entry added to UPCOMING with done 0",
+        "`npm test` passes",
+        "Picker shows the building tile"
+      ]
+    },
+    {
+      "id": "E06b",
+      "area": "engine",
+      "title": "3.0L inline-six: draft the real-world figures",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E06a"
+      ],
+      "detail": "On the `i6` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 3.0L inline-six, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "acceptance": [
+        "draft present and plausible",
+        "done is 1",
         "`npm test` passes"
       ]
     },
@@ -206,6 +376,23 @@
       "acceptance": [
         "Part visible and selectable",
         "Hidden with the camshafts layer; tests pass"
+      ]
+    },
+    {
+      "id": "E06c",
+      "area": "engine",
+      "title": "3.0L inline-six: publish it in the atlas",
+      "size": "M",
+      "auto": true,
+      "depends": [
+        "E06b"
+      ],
+      "detail": "Move `i6` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming premium sedans), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs i6` and keep torque and power plausible for the class.",
+      "acceptance": [
+        "Engine in ENGINES with every required field",
+        "UPCOMING entry removed",
+        "`npm test` passes including 3D, layout and physics tests",
+        "Peak torque and power plausible"
       ]
     },
     {
@@ -237,7 +424,7 @@
     {
       "id": "U01",
       "area": "ui",
-      "title": "Deep links: #engine=…&part=…&layer=…",
+      "title": "Deep links: #engine=\u2026&part=\u2026&layer=\u2026",
       "size": "S",
       "auto": true,
       "depends": [],
@@ -280,7 +467,7 @@
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "The picker is a 2×2 grid. Group engines by kind (petrol, diesel, V) and keep it usable with ten entries without pushing the parts index off screen.",
+      "detail": "The picker is a 2\u00d72 grid. Group engines by kind (petrol, diesel, V) and keep it usable with ten entries without pushing the parts index off screen.",
       "acceptance": [
         "Ten engines fit comfortably on desktop and phone",
         "Selection and keyboard behaviour unchanged"
@@ -371,7 +558,7 @@
       "size": "M",
       "auto": true,
       "depends": [],
-      "detail": "Add a Glossary section (new view in src/views) with about 50 plain-language terms (BMEP, compression ratio, torque, valve overlap, knock, lambda…), searchable, with terms linking to the parts that use them.",
+      "detail": "Add a Glossary section (new view in src/views) with about 50 plain-language terms (BMEP, compression ratio, torque, valve overlap, knock, lambda\u2026), searchable, with terms linking to the parts that use them.",
       "acceptance": [
         "At least 50 terms, alphabetical, searchable",
         "Each term links to at least one part where relevant"
@@ -397,7 +584,7 @@
       "size": "M",
       "auto": true,
       "depends": [],
-      "detail": "A \"Something sounds wrong\" page: choose a symptom (blue smoke, ticking, overheating…) and see the likely parts from the `notice` text in anatomy.js, each linking to its part page. Build the symptom map as data with a test.",
+      "detail": "A \"Something sounds wrong\" page: choose a symptom (blue smoke, ticking, overheating\u2026) and see the likely parts from the `notice` text in anatomy.js, each linking to its part page. Build the symptom map as data with a test.",
       "acceptance": [
         "At least 12 symptoms mapped to real parts",
         "Test checks every referenced part exists"
@@ -478,6 +665,60 @@
       "detail": "Headless screenshots of each engine and tab compared against stored baselines. Needs a new dev dependency (puppeteer) and CI changes, so it must be done by a person.",
       "acceptance": [
         "CI fails when a screen changes unexpectedly"
+      ]
+    },
+    {
+      "id": "E07",
+      "area": "engine",
+      "title": "4.0L V8 (large pickup / performance car)",
+      "size": "L",
+      "auto": false,
+      "depends": [],
+      "detail": "Add a 4.0 L 90\u00b0 V8 (id `v8`). The existing layout code handles only 60\u00b0 V6 pin phasing; extend `makeLayout` for a cross-plane V8 (firing order 1-8-4-3-6-5-7-2) without changing the results for the existing engines. Add layout tests for the new case.",
+      "acceptance": [
+        "makeLayout supports eight cylinders in two 90\u00b0 banks",
+        "Existing engines produce identical layouts (tests prove it)",
+        "New engine passes all guard tests"
+      ]
+    },
+    {
+      "id": "E08",
+      "area": "engine",
+      "title": "2.0L flat-four boxer",
+      "size": "L",
+      "auto": false,
+      "depends": [],
+      "detail": "Needs a new horizontally opposed layout in makeLayout and the 3D builder (cylinders lying along \u00b1Z, opposed crank pins). This is a design task, so a human or an interactive session should plan it first.",
+      "acceptance": [
+        "New layout kind `flat` supported end to end",
+        "All tests pass; model reviewed visually"
+      ]
+    },
+    {
+      "id": "E09",
+      "area": "engine",
+      "title": "1.0L turbo three-cylinder petrol",
+      "size": "L",
+      "auto": false,
+      "depends": [],
+      "detail": "Petrol turbo support: the physics `boostMax` is only used for diesels (turbo lag and boost map). Extend it to petrol, show the turbocharger and intercooler on petrol engines that have boostMax > 0, and add the engine.",
+      "acceptance": [
+        "Petrol turbo physics tested",
+        "Catalog turbo parts shown for turbo petrol engines",
+        "Engine added"
+      ]
+    },
+    {
+      "id": "E10",
+      "area": "engine",
+      "title": "1.8L hybrid (Atkinson-cycle) four",
+      "size": "L",
+      "auto": false,
+      "depends": [],
+      "detail": "Atkinson-cycle valve timing (late intake closing) and a simple electric-assist torque fill at low rpm. Plan with a human first.",
+      "acceptance": [
+        "Late-intake-closing timing modelled and tested",
+        "Engine added"
       ]
     }
   ]

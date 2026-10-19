@@ -15,6 +15,7 @@ Pieces is an anatomy atlas of everyday car engines (Vite + Three.js, vanilla JS)
 
 ## Where things live
 - `src/data/engines.js` — engine definitions; they drive physics (`src/physics.js`), the procedural 3D model (`src/engine3d/build.js`), Compare and the picker.
+- `src/data/upcoming.js` — engines being built in stages (shown as "Building" in the picker); only the publish stage moves one into `engines.js`.
 - `src/data/catalog.js` — parts catalogue (systems, names, descriptions, fuel restrictions).
 - `src/data/anatomy.js` — plain-language page for every part (what, why, how, life, neighbours).
 - `src/data/layers.js` — peel-back layers and guided tours.

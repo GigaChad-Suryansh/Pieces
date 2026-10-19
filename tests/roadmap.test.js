@@ -22,3 +22,18 @@ describe('roadmap', () => {
     expect(skipped.id).not.toBe(first.id);
   });
 });
+
+import { UPCOMING, STAGES } from '../src/data/upcoming.js';
+import { ENGINES } from '../src/data/engines.js';
+
+describe('upcoming engines', () => {
+  it('have unique ids that are not yet published and a valid stage', () => {
+    const ids = UPCOMING.map((u) => u.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const u of UPCOMING) {
+      expect(ENGINES[u.id], `${u.id} is published, remove it from UPCOMING`).toBeUndefined();
+      for (const k of ['short', 'name', 'sub']) expect(typeof u[k]).toBe('string');
+      expect(Number.isInteger(u.done) && u.done >= 0 && u.done < STAGES.length - 1).toBe(true);
+    }
+  });
+});

@@ -27,7 +27,8 @@ if (process.env.FORCE_ITEM) item = roadmap.items.find((i) => i.id === process.en
 if (!item && healthy) item = nextItem(roadmap, progress);
 
 const RECIPES = {
-  engine: `ENGINE RECIPE
+  engine: `ENGINE RECIPE (engines are built in three small stages; do only the stage in this item)
+Staging data lives in src/data/upcoming.js (picker shows it as "Building n/3"). Only the final "publish" stage touches ENGINES.
 1. Add one entry to ENGINES in src/data/engines.js, copying an existing engine of the same fuel and layout as a template. Every field in tests/physics.test.js REQUIRED must be present, including \`where\` (the everyday cars it is found in).
 2. Do not touch src/engine3d unless the item says the builder needs work. Compare colours, the picker, parts lists and tours are all driven by ENGINES.
 3. Run \`npm test\` — it builds the 3D model, checks layout phasing, physics sanity, idle and wide-open-throttle behaviour for every engine. Fix the data (not the tests) until it passes.

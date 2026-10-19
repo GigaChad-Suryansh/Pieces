@@ -291,3 +291,11 @@ figcaption { display: flex; justify-content: space-between; gap: 10px; flex-wrap
 .stageHead .title p.found { display: block !important; max-width: 52ch; color: var(--on-stage-1, #fff); font-size: 13px; line-height: 1.4; }
 .stageHead .title p.found b { font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; margin-right: 6px; color: var(--on-stage-2); }
 @media (max-width: 720px) { .stageHead .title p.found { font-size: 12px; max-width: 34ch; } }
+
+/* engines still being built, shown honestly as work in progress */
+.engineList .building { position: relative; display: flex; align-items: center; gap: 12px; padding: 6px 10px 10px; min-height: 46px; border: 1px dashed var(--line, #c9c6bd); border-radius: 10px; opacity: .72; }
+.engineList .building b { font: 800 22px/1 var(--display); width: 48px; text-align: center; color: var(--ink-3); }
+.engineList .building span { display: grid; line-height: 1.25; font-weight: 500; flex: 1; }
+.engineList .building small { font-weight: 400; font-size: 12px; color: var(--ink-3); }
+.engineList .building em { font-style: normal; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.engineList .building i { position: absolute; left: 10px; right: 10px; bottom: 4px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--ink-2) var(--p), transparent var(--p)); opacity: .5; }
