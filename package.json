@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "roadmap:validate": "node scripts/validate-roadmap.mjs",
+    "roadmap:next": "node scripts/validate-roadmap.mjs"
   },
   "devDependencies": {
     "vite": "latest",

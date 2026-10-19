@@ -127,3 +127,25 @@ describe('layers and tours', () => {
     }
   });
 });
+
+import { buildEngine } from '../src/engine3d/build.js';
+describe('engine definitions (guards for new engines)', () => {
+  const REQUIRED = ['id', 'short', 'name', 'sub', 'blurb', 'where', 'layout', 'cylinders', 'valvesPerCylinder', 'fuel', 'bore', 'stroke', 'rodRatio', 'compression', 've', 'veRpm', 'redline', 'ratedTorque', 'inertia', 'idleRpm', 'fmep', 'afr', 'boostMax', 'firingOrder', 'intake', 'exhaust'];
+  for (const [key, e] of Object.entries(ENGINES)) {
+    it(`${key}: has every required field and a consistent firing order`, () => {
+      for (const f of REQUIRED) expect(e[f], `${key}.${f}`).toBeDefined();
+      expect(e.id).toBe(key);
+      expect([...e.firingOrder].sort((a, b) => a - b)).toEqual(Array.from({ length: e.cylinders }, (_, i) => i + 1));
+      expect(['petrol', 'diesel']).toContain(e.fuel);
+      expect(e.where.length).toBeGreaterThan(20);
+    });
+    it(`${key}: the 3D model builds with only catalogue parts and sane bounds`, () => {
+      const m = buildEngine(e);
+      expect(m.parts.length).toBeGreaterThan(150);
+      const names = new Set(CATALOG.map((p) => p.name));
+      for (const p of m.parts) expect(names.has(p.userData.part), `${key}: unknown part ${p.userData.part}`).toBe(true);
+      const s = m.bounds.size;
+      for (const v of [s.x, s.y, s.z]) { expect(Number.isFinite(v)).toBe(true); expect(v).toBeGreaterThan(3); expect(v).toBeLessThan(60); }
+    });
+  }
+});
