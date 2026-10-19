@@ -59,7 +59,7 @@ $('#engineTab').innerHTML = `
   <section class="stage" aria-label="3D engine">
     <div id="viewport" class="viewport">
       <div class="stageHead">
-        <div class="title"><h1 id="engName"></h1><p id="engSub"></p></div>
+        <div class="title"><h1 id="engName"></h1><p id="engSub"></p><p id="engFound" class="found"></p></div>
         <div class="tools" role="toolbar" aria-label="View controls">
           <div class="seg" role="group" aria-label="Camera"><button data-view="iso" class="on">3/4</button><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="top">Top</button></div>
           <div class="seg" role="group" aria-label="Display">
@@ -71,7 +71,7 @@ $('#engineTab').innerHTML = `
           </div>
           <div class="seg" role="group" aria-label="Simulator">
             <button id="simBtn" aria-pressed="false" title="Start the engine and show live instruments">Run engine</button>
-            <button id="soundBtn" class="simOnly" aria-pressed="false" title="Synthesised engine sound">Sound</button>
+            <button id="soundBtn" aria-pressed="false" title="Synthesised engine sound">Sound</button>
           </div>
           <button class="ghost" id="resetBtn" title="Reset view and engine">Reset</button>
         </div>
@@ -162,7 +162,7 @@ function loadEngine(id) {
   stage.setEngine(s);
   const names = new Set(partsFor(s).map((p) => p.name));
   if (!names.has(state.selected)) state.selected = 'Piston';
-  $('#engName').textContent = s.name; $('#engSub').textContent = s.sub;
+  $('#engName').textContent = s.name; $('#engSub').textContent = s.sub; $('#engFound').innerHTML = '<b>Found in</b> ' + s.where.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   $('#dial').innerHTML = tachMarkup(s.redline);
   $('#advLabel').textContent = s.fuel === 'diesel' ? 'Injection advance' : 'Ignition advance';
   if (state.tour) tourEnd();
@@ -355,7 +355,7 @@ document.addEventListener('click', (e) => {
   if (t.dataset.preset) { const p = PRESETS[t.dataset.preset]; state.preset = t.dataset.preset; setDrive(p.throttle, p.load); state.running = true; return syncControls(); }
   if (t.id === 'soundBtn') {
     const want = !audio.on; t.setAttribute('aria-pressed', want); audio.set(want);
-    if (want && !state.running) { state.running = true; syncControls(); }
+    if (want) { if (!state.sim) setSim(true); if (!state.running) { state.running = true; syncControls(); } }
     return;
   }
   if (t.dataset.tour) return state.tour?.id === t.dataset.tour ? tourEnd() : tourStart(t.dataset.tour);

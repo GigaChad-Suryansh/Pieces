@@ -286,3 +286,8 @@ figcaption { display: flex; justify-content: space-between; gap: 10px; flex-wrap
 .cap.sub { margin: 14px 0 8px; }
 
 #engineTab.tour .pin:not(.sel) { opacity: .4; }
+
+/* where this engine is used: always visible under the title, also on phones */
+.stageHead .title p.found { display: block !important; max-width: 52ch; color: var(--on-stage-1, #fff); font-size: 13px; line-height: 1.4; }
+.stageHead .title p.found b { font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; margin-right: 6px; color: var(--on-stage-2); }
+@media (max-width: 720px) { .stageHead .title p.found { font-size: 12px; max-width: 34ch; } }
