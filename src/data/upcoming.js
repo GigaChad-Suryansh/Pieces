@@ -4,5 +4,19 @@
 export const STAGES = ['Announced', 'Real-world figures drafted', 'Published in the atlas'];
 
 export const UPCOMING = [
-  { id: 'i4s', short: 'I4', name: '1.5L Inline-4', sub: 'Petrol · compact sedans and hatchbacks', done: 0 },
+  {
+    id: 'i4s',
+    short: 'I4',
+    name: '1.5L Inline-4',
+    sub: 'Petrol · compact sedans and hatchbacks',
+    done: 1,
+    draft: {
+      cylinders: 4,
+      bore: 0.075,
+      stroke: 0.0847,
+      compression: 10.5,
+      redline: 6500,
+      firingOrder: [1, 3, 4, 2],
+    },
+  },
 ];

@@ -36,4 +36,26 @@ describe('upcoming engines', () => {
       expect(Number.isInteger(u.done) && u.done >= 0 && u.done < STAGES.length - 1).toBe(true);
     }
   });
+
+  it('have valid draft figures and displacement matching name within 5% when done >= 1', () => {
+    for (const u of UPCOMING) {
+      if (u.done >= 1) {
+        expect(u.draft).toBeDefined();
+        expect(u.draft.cylinders).toBeGreaterThan(0);
+        expect(u.draft.bore).toBeGreaterThan(0);
+        expect(u.draft.stroke).toBeGreaterThan(0);
+        expect(u.draft.compression).toBeGreaterThan(0);
+        expect(u.draft.redline).toBeGreaterThan(0);
+        expect(Array.isArray(u.draft.firingOrder)).toBe(true);
+
+        const displacementL = u.draft.cylinders * Math.PI * Math.pow(u.draft.bore / 2, 2) * u.draft.stroke * 1000;
+        const match = u.name.match(/([0-9.]+)L/);
+        if (match) {
+          const nominalL = parseFloat(match[1]);
+          const diffRatio = Math.abs(displacementL - nominalL) / nominalL;
+          expect(diffRatio).toBeLessThan(0.05);
+        }
+      }
+    }
+  });
 });
