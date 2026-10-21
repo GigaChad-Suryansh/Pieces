@@ -304,3 +304,15 @@ figcaption { display: flex; justify-content: space-between; gap: 10px; flex-wrap
 .stageHead .seg button, .stageHead .tools .ghost { padding: 0 9px; }
 .stageHead .title p.found { max-width: 44ch; display: -webkit-box !important; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 @media (max-width: 860px) { .camBar { bottom: auto; top: auto; } .layersBar { bottom: 62px; } }
+
+/* "Building" tiles span the whole picker row so the engine tiles above stay aligned */
+.engineList { align-items: stretch; }
+.engineList .building { grid-column: 1 / -1; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; column-gap: 6px; padding: 8px 10px 12px; }
+.engineList .building b { width: 34px; font-size: 20px; }
+.engineList .building small { display: block; }
+.engineList .building span { min-width: 0; font-size: 13px; }
+.engineList .building small, .engineList .building span { overflow-wrap: anywhere; }
+.engineList .building em { white-space: nowrap; }
+
+.engineList .building small { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.stageHead .tools { justify-content: flex-start; width: 100%; }

@@ -62,6 +62,7 @@ $('#engineTab').innerHTML = `
       <div class="stageHead">
         <div class="title"><h1 id="engName"></h1><p id="engSub"></p><p id="engFound" class="found"></p></div>
         <div class="tools" role="toolbar" aria-label="View controls">
+          <div class="seg" role="group" aria-label="Camera"><button data-view="iso" class="on">3/4</button><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="top">Top</button></div>
           <div class="seg" role="group" aria-label="Display">
             <button data-tool="explode" aria-pressed="false">Explode</button>
             <button data-tool="cutaway" aria-pressed="false">Cutaway</button>
@@ -76,7 +77,6 @@ $('#engineTab').innerHTML = `
           <button class="ghost" id="resetBtn" title="Reset view and engine">Reset</button>
         </div>
       </div>
-      <div class="camBar glass"><div class="seg" role="group" aria-label="Camera"><button data-view="iso" class="on">3/4</button><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="top">Top</button></div></div>
       <div class="pins" id="pins"></div>
       <div class="layersBar" id="layersBar"><div class="lbTop"><b>Layers</b><output id="layerName"></output></div>
         <input id="layers" type="range" min="0" max="${LAYERS.length - 1}" step="1" value="0" aria-label="Peel the engine apart, layer by layer">
