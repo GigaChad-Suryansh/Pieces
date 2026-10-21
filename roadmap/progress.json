@@ -1,13 +1,14 @@
 {
   "completed_ids": [
     "E01a",
-    "E01b"
+    "E01b",
+    "E01c"
   ],
   "blocked": [],
   "consecutive_failures": 0,
-  "last_run": "2026-10-20T08:25:25.854Z",
+  "last_run": "2026-10-21T08:30:45.296Z",
   "last_outcome": "verified",
-  "current_task": "E01c — 1.5L petrol four: publish it in the atlas",
+  "current_task": "F01 — Audit the audio at idle, road and power",
   "last_failure": null,
-  "notes": "E01b built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
+  "notes": "E01c built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
 }

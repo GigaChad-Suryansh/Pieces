@@ -23,3 +23,14 @@ Each entry records one GitHub Actions run. Persistent state lives in progress.js
 
 ---
 
+## Day 3 — 2026-10-21
+
+- **Run:** [#3](https://github.com/GigaChad-Suryansh/Pieces/actions/runs/39569218843) (schedule)
+- **Item:** E01c 1.5L petrol four: publish it in the atlas
+- **Gemini:** success (gemini-3.6-flash)
+- **Independent verification (roadmap + tests + build):** passed
+- **Repair attempt:** skipped
+- **Summary:** {   "session_id": "6df10138-7403-43bc-b4fe-f01d213664ca",   "response": "Published the **1.5L Inline-4 (`i4s`)** engine into the atlas.\n\n### Summary of Changes\n1. **Engine Definition (`src/data/engines.js`)**: Added `i4s` entry to `ENGINES` using draft figures (75 mm bore, 84.7 mm stroke, 10.5 CR, 6500 RPM redline, `[1, 3, 4, 2]` firing order) with complete specs and real-world vehicle placement details (`where`).\n2. **Upcoming List (`src/data/upcoming.js`)**: Removed `i4s` entry from `UPCOMING` as it is now published.\n3. **Verification**:\n   - `node scripts/engine-report.mjs i4s`: 1.50 L | peak torque 91 Nm @ 3500 (BMEP 7.6 bar) | peak power 43 kW @ 5250 (29 kW/L) | peak cylinder pressure 38 bar.\n   - All 55 vitest unit tests (`npm test`) and Vite build (`npm run build`) pass clean
+
+---
+
