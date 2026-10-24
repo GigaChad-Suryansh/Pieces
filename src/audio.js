@@ -27,6 +27,27 @@ export function cycleSpectrum(type, layout, throttle, rpm) {
   return { real, imag };
 }
 
+/**
+ * Calculates target engine loudness multiplier (0.0 to 1.0) based on throttle, load, and running state.
+ * Guarantees idle loudness is never near-silent and maintains at least 60% of power-mode loudness.
+ */
+export function targetLoudness(throttleOrPhysics = 0, load = 0, running = true) {
+  let thr = 0, ld = 0, run = running;
+  if (typeof throttleOrPhysics === 'object' && throttleOrPhysics !== null) {
+    const p = throttleOrPhysics;
+    thr = p.effectiveThrottle ?? p.throttle ?? 0;
+    ld = p.load ?? 0;
+    if (typeof load === 'boolean') run = load;
+  } else {
+    thr = Number(throttleOrPhysics) || 0;
+    ld = Number(load) || 0;
+  }
+  if (!run) return 0;
+  const clampedThr = Math.max(0, Math.min(1, thr));
+  const clampedLoad = Math.max(0, Math.min(1, ld));
+  return 0.60 + 0.30 * clampedThr + 0.10 * clampedLoad;
+}
+
 function buildWave(ctx, type, layout, throttle, rpm) {
   const { real, imag } = cycleSpectrum(type, layout, throttle, rpm);
   return ctx.createPeriodicWave(real, imag, { disableNormalization: false });
@@ -79,8 +100,8 @@ export function createEngineAudio() {
       osc.frequency.setTargetAtTime(Math.max(1, rpm / 120), t, 0.04);
       tone.frequency.setTargetAtTime(750 + thr * 1800 + rpm * 0.5, t, 0.06);
       noiseGain.gain.setTargetAtTime(running ? 0.03 + 0.06 * thr * Math.min(1, rpm / spec.redline + 0.2) : 0, t, 0.08);
-      const loud = 0.55 + 0.35 * thr + 0.1 * physics.load;
-      master.gain.setTargetAtTime(running ? loud * 0.5 : 0, t, running ? 0.08 : 0.12);
+      const loud = targetLoudness(physics, running);
+      master.gain.setTargetAtTime(loud * 0.5, t, running ? 0.08 : 0.12);
     },
   };
 }
