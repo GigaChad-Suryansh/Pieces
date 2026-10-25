@@ -28,6 +28,8 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: Ensure Google verification file is in published output
+        run: cp public/google52c1720ec6a5b0e1.html dist/google52c1720ec6a5b0e1.html
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
