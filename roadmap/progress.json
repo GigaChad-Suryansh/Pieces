@@ -3,13 +3,14 @@
     "E01a",
     "E01b",
     "E01c",
-    "F01"
+    "F01",
+    "E02a"
   ],
   "blocked": [],
   "consecutive_failures": 0,
-  "last_run": "2026-10-24T08:11:22.767Z",
+  "last_run": "2026-10-26T08:49:31.027Z",
   "last_outcome": "verified",
-  "current_task": "E02a — 2.5L petrol four: announce it as \"Building\"",
+  "current_task": "E02b — 2.5L petrol four: draft the real-world figures",
   "last_failure": null,
-  "notes": "F01 built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
+  "notes": "E02a built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
 }

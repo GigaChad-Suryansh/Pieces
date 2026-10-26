@@ -3,4 +3,12 @@
 // engine into ENGINES (src/data/engines.js) and deletes its entry here.
 export const STAGES = ['Announced', 'Real-world figures drafted', 'Published in the atlas'];
 
-export const UPCOMING = [];
+export const UPCOMING = [
+  {
+    id: 'i4m',
+    short: '2.5L I4',
+    name: '2.5L Inline-4 petrol',
+    sub: 'Mid-size sedans',
+    done: 0,
+  },
+];
