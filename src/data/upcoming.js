@@ -9,6 +9,14 @@ export const UPCOMING = [
     short: '2.5L I4',
     name: '2.5L Inline-4 petrol',
     sub: 'Mid-size sedans',
-    done: 0,
+    done: 1,
+    draft: {
+      cylinders: 4,
+      bore: 0.089,
+      stroke: 0.100,
+      compression: 10.5,
+      redline: 6500,
+      firingOrder: [1, 3, 4, 2],
+    },
   },
 ];
