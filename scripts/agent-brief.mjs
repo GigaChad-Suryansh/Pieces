@@ -20,6 +20,15 @@ const healthy = testExit === '0' && buildExit === '0';
 const tail = (file, n = 40) => {
   try { return fs.readFileSync(file, 'utf8').split('\n').slice(-n).join('\n'); } catch { return '(no log)'; }
 };
+const head = (f, n = 90) => { try { return fs.readFileSync(f, 'utf8').split('\n').slice(0, n).join('\n'); } catch { return '(new file: create it)'; } };
+const engineBlock = (id) => {
+  try {
+    const s = fs.readFileSync('src/data/engines.js', 'utf8');
+    const a = s.indexOf(`\n  ${id}: {`); if (a < 0) return '';
+    const e = s.indexOf('\n  },', a);
+    return s.slice(a + 1, e + 5);
+  } catch { return ''; }
+};
 const sh = (cmd, args) => (spawnSync(cmd, args, { encoding: 'utf8' }).stdout || '').trim();
 
 let item = null;
@@ -70,8 +79,11 @@ ${item.acceptance.map((a) => `- ${a}`).join('\n')}
 
 ${RECIPES[item.area] || ''}
 
-### Repository map
-${sh('git', ['ls-files', 'src', 'tests', 'scripts']).split('\n').map((f) => `- ${f}`).join('\n')}
+### Files to touch (only these)
+${(item.files || []).map((f) => `- ${f}`).join('\n')}
+
+${(item.files || []).map((f) => `#### ${f} (first 90 lines)\n\`\`\`\n${head(f)}\n\`\`\``).join('\n\n')}
+${item.template ? `\n### Template engine entry (copy its shape)\n\`\`\`js\n${engineBlock(item.template)}\n\`\`\`\n` : ''}
 
 ### Recent run log
 ${tail('roadmap/daily-log.md', 25)}
