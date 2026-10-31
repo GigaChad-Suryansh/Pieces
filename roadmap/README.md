@@ -18,7 +18,7 @@ Items with `"auto": false` need a person (real-device checks, listening tests, a
 ## One-time setup (repository settings, done by the owner)
 1. **Secret `GEMINI_API_KEY`**: a Google AI Studio key (Settings → Secrets and variables → Actions → Secrets).
 2. **Settings → Actions → General → Workflow permissions**: tick *Allow GitHub Actions to create and approve pull requests*. (Or add a fine-grained token as secret `PR_TOKEN` with Contents and Pull requests write.)
-3. Optional variable `AUTO_MERGE = true` to squash-merge verified PRs and start a deploy. **Off by default**, because automated checks cannot see the screen.
+3. Auto-merge is ON: verified PRs are squash-merged and a deploy starts. Set variable `AUTO_MERGE = false` to review each PR by hand.
 4. Optional variable `GEMINI_MODEL` to force a model.
 
 Run it by hand: Actions → *Pieces Autonomous Developer* → Run workflow (optionally enter an item id such as `E01`).

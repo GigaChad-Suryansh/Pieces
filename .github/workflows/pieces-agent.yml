@@ -281,7 +281,7 @@ jobs:
             - Automated checks cannot see the screen: please look at the preview before merging anything visual.
             - Nothing is deployed until this is merged to main.
 
-      # Auto-merge is OFF unless the repository variable AUTO_MERGE is set to 'true'.
+      # Auto-merge is ON for verified work. Turn it off with the repository variable AUTO_MERGE = false.
       - name: Merge the pull request (verified work only)
         id: automerge
         if: >-
@@ -289,7 +289,7 @@ jobs:
           && steps.verify.outputs.ok == 'true'
           && steps.pr.outputs.pull-request-number != ''
           && steps.pr.outputs.pull-request-operation != 'closed'
-          && vars.AUTO_MERGE == 'true'
+          && vars.AUTO_MERGE != 'false'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.PR_TOKEN || secrets.GITHUB_TOKEN }}
