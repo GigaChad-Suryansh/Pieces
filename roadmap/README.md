@@ -27,3 +27,6 @@ Run it by hand: Actions → *Pieces Autonomous Developer* → Run workflow (opti
 - `npm run roadmap:validate` checks the backlog and progress file.
 - `npm run roadmap:next` prints the next automatic item.
 - `node scripts/engine-report.mjs [id]` prints peak torque and power for engines.
+
+## Small-step rule
+Every automatic item must be size S, touch at most 3 listed files, and have a short detail (the validator enforces it). Big features are split into steps like "data + test", then "view", then "wire into the tab", so one daily run can finish one step. The brief hands the agent the first 90 lines of each listed file (and a template engine entry for engine steps) so it spends its turns editing, not exploring.

@@ -96,7 +96,7 @@ jobs:
             ${{ steps.brief.outputs.prompt }}
           settings: |
             {
-              "model": { "maxSessionTurns": 30 },
+              "model": { "maxSessionTurns": 40 },
               "tools": {
                 "core": ["run_shell_command", "read_file", "write_file", "replace"],
                 "allowed": [
@@ -130,7 +130,7 @@ jobs:
             ${{ steps.brief.outputs.prompt }}
           settings: |
             {
-              "model": { "maxSessionTurns": 30 },
+              "model": { "maxSessionTurns": 40 },
               "tools": {
                 "core": ["run_shell_command", "read_file", "write_file", "replace"],
                 "allowed": [
@@ -182,7 +182,7 @@ jobs:
             ${{ steps.brief.outputs.prompt }}
           settings: |
             {
-              "model": { "maxSessionTurns": 30 },
+              "model": { "maxSessionTurns": 40 },
               "tools": {
                 "core": ["run_shell_command", "read_file", "write_file", "replace"],
                 "allowed": [
