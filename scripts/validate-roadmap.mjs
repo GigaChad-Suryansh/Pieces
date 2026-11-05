@@ -23,6 +23,13 @@ export function validateRoadmap(roadmap, progress) {
     if (typeof it.title !== 'string' || it.title.length < 5) errors.push(`${where}: title too short`);
     if (typeof it.detail !== 'string' || it.detail.length < 30) errors.push(`${where}: detail too short`);
     if (!Array.isArray(it.acceptance) || it.acceptance.length === 0) errors.push(`${where}: needs at least one acceptance criterion`);
+    // Small-step rule: anything the daily agent runs must be tiny so one run can finish it.
+    if (it.auto === true && !(progress?.completed_ids || []).includes(it.id)) {
+      if (it.size !== 'S') errors.push(`${where}: automatic items must be size S (split it into smaller steps)`);
+      if (!Array.isArray(it.files) || it.files.length < 1 || it.files.length > 3) errors.push(`${where}: automatic items must list 1-3 files to touch`);
+      if (typeof it.detail === 'string' && it.detail.length > 700) errors.push(`${where}: detail longer than 700 characters`);
+      if (Array.isArray(it.acceptance) && it.acceptance.length > 4) errors.push(`${where}: more than 4 acceptance criteria`);
+    }
   });
   const done = progress?.completed_ids;
   if (!Array.isArray(done)) errors.push('progress.completed_ids must be an array');

@@ -101,337 +101,496 @@
     },
     {
       "id": "F02",
-      "area": "ui",
-      "title": "Check every part page for overflow and missing text",
+      "area": "quality",
+      "title": "Test that every part page has all its text",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Write a test that every ANATOMY field renders without being empty and that no field is longer than 220 characters; shorten any that are.",
+      "files": [
+        "tests/anatomy.test.js"
+      ],
+      "detail": "Create tests/anatomy.test.js. For every entry in ANATOMY (src/data/anatomy.js) check that each field is a non-empty string (arrays: non-empty, every item non-empty) and no string is longer than 400 characters. Do NOT edit anatomy.js. If an entry fails, raise nothing; only set the limit to the smallest round number (400, 500, 600) that passes today.",
       "acceptance": [
-        "Test added",
-        "All entries pass"
+        "Test file added",
+        "No data edited",
+        "`npm test` passes"
       ]
     },
     {
       "id": "E02c",
       "area": "engine",
-      "title": "2.5L petrol four: publish it in the atlas",
-      "size": "M",
+      "title": "2.5L petrol four: publish in the atlas",
+      "size": "S",
       "auto": true,
       "depends": [
         "E02b"
       ],
-      "detail": "Move `i4m` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming mid-size sedans), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs i4m` and keep torque and power plausible for the class.",
+      "files": [
+        "src/data/engines.js",
+        "src/data/upcoming.js"
+      ],
+      "detail": "Add `i4m` to ENGINES in src/data/engines.js: copy the template entry shown below, apply the draft values from UPCOMING, change id/short/name/sub, write `where` (\"Mid-size sedans and crossovers\"), scale ratedTorque and inertia by displacement ratio. Then delete the `i4m` entry from UPCOMING. Run `node scripts/engine-report.mjs i4m`; peak power per litre should be 25–60 kW/L.",
       "acceptance": [
-        "Engine in ENGINES with every required field",
-        "UPCOMING entry removed",
-        "`npm test` passes including 3D, layout and physics tests",
-        "Peak torque and power plausible"
+        "Engine in ENGINES, removed from UPCOMING",
+        "`npm test` passes",
+        "engine-report values plausible"
+      ],
+      "template": "i4"
+    },
+    {
+      "id": "F03",
+      "area": "ui",
+      "title": "Show \"Found in\" in Compare",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/views/compare.js"
+      ],
+      "detail": "Add a \"Found in\" row to the table in src/views/compare.js using each engine's `where`.",
+      "acceptance": [
+        "Row visible",
+        "`npm test` passes"
       ]
     },
     {
       "id": "E03a",
       "area": "engine",
-      "title": "1.5L turbo-diesel four: announce it as \"Building\"",
+      "title": "1.5L turbo-diesel four: announce as \"Building\"",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add an entry for the 1.5L turbo-diesel four (small SUVs and hatchbacks) to UPCOMING in src/data/upcoming.js with id `d4s`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "files": [
+        "src/data/upcoming.js"
+      ],
+      "detail": "Add one entry to UPCOMING in src/data/upcoming.js: id `d4s`, short, name \"1.5L turbo-diesel four\", sub \"small SUVs and hatchbacks\", done: 0. Nothing else.",
       "acceptance": [
-        "Entry added to UPCOMING with done 0",
-        "`npm test` passes",
-        "Picker shows the building tile"
-      ]
-    },
-    {
-      "id": "F03",
-      "area": "ui",
-      "title": "Show \"Found in\" for every engine in Compare",
-      "size": "S",
-      "auto": true,
-      "depends": [],
-      "detail": "Add a \"Found in\" row to the Compare table from each engine `where`.",
-      "acceptance": [
-        "Row visible in Compare",
+        "Entry added with done 0",
         "`npm test` passes"
       ]
     },
     {
       "id": "E03b",
       "area": "engine",
-      "title": "1.5L turbo-diesel four: draft the real-world figures",
+      "title": "1.5L turbo-diesel four: draft the real figures",
       "size": "S",
       "auto": true,
       "depends": [
         "E03a"
       ],
-      "detail": "On the `d4s` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 1.5L turbo-diesel four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "files": [
+        "src/data/upcoming.js"
+      ],
+      "detail": "In the `d4s` UPCOMING entry set done: 1 and add draft {cylinders, bore (m), stroke (m), compression, redline, firingOrder} with typical real figures for a 1.5L turbo-diesel four. Displacement from bore, stroke and cylinders must be within 5% of the name.",
       "acceptance": [
-        "draft present and plausible",
-        "done is 1",
+        "draft present",
+        "displacement within 5%",
         "`npm test` passes"
       ]
     },
     {
       "id": "E03c",
       "area": "engine",
-      "title": "1.5L turbo-diesel four: publish it in the atlas",
-      "size": "M",
+      "title": "1.5L turbo-diesel four: publish in the atlas",
+      "size": "S",
       "auto": true,
       "depends": [
         "E03b"
       ],
-      "detail": "Move `d4s` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming small SUVs and hatchbacks), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs d4s` and keep torque and power plausible for the class.",
+      "files": [
+        "src/data/engines.js",
+        "src/data/upcoming.js"
+      ],
+      "detail": "Add `d4s` to ENGINES in src/data/engines.js: copy the template entry shown below, apply the draft values, change id/short/name/sub, write `where` naming small SUVs and hatchbacks, and scale ratedTorque and inertia by displacement ratio. Then delete the `d4s` entry from UPCOMING. Run `node scripts/engine-report.mjs d4s`; peak power per litre should be 25–60 kW/L.",
       "acceptance": [
-        "Engine in ENGINES with every required field",
-        "UPCOMING entry removed",
-        "`npm test` passes including 3D, layout and physics tests",
-        "Peak torque and power plausible"
-      ]
+        "Engine in ENGINES, removed from UPCOMING",
+        "`npm test` passes",
+        "engine-report values plausible"
+      ],
+      "template": "diesel"
     },
     {
-      "id": "P01",
+      "id": "P01a",
       "area": "part",
-      "title": "Model the rocker arm (roller finger follower)",
-      "size": "M",
+      "title": "Rocker arm: catalogue and anatomy text",
+      "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "The catalogue has a Rocker arm entry but no 3D model, so it shows as \"ref\". Add a finger-follower rocker to src/engine3d (name it exactly `Rocker arm`) for engines that would plausibly use one, or document in anatomy.js why not. It must move with the camshaft (follow valveLiftCurve) like the valves do.",
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
+      ],
+      "detail": "Rocker arm already exists in the catalogue (a note says this engine has none). Instead add a NEW part \"Roller finger follower\" to src/data/catalog.js (Valvetrain) and a full ANATOMY entry in src/data/anatomy.js copying the shape of \"Rocker arm\". Also add a simple box mesh named exactly \"Roller finger follower\" per valve in src/engine3d/build.js.",
       "acceptance": [
-        "A mesh named `Rocker arm` exists in at least one engine",
-        "It moves with the cam; guard tests pass"
+        "Part in catalogue and anatomy",
+        "`npm test` passes"
       ]
     },
     {
       "id": "E04a",
       "area": "engine",
-      "title": "2.0L turbo-diesel four: announce it as \"Building\"",
+      "title": "2.0L turbo-diesel four: announce as \"Building\"",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add an entry for the 2.0L turbo-diesel four (SUVs and pickups) to UPCOMING in src/data/upcoming.js with id `d4m`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "files": [
+        "src/data/upcoming.js"
+      ],
+      "detail": "Add one entry to UPCOMING in src/data/upcoming.js: id `d4m`, short, name \"2.0L turbo-diesel four\", sub \"SUVs and pickups\", done: 0. Nothing else.",
       "acceptance": [
-        "Entry added to UPCOMING with done 0",
-        "`npm test` passes",
-        "Picker shows the building tile"
+        "Entry added with done 0",
+        "`npm test` passes"
       ]
     },
     {
       "id": "E04b",
       "area": "engine",
-      "title": "2.0L turbo-diesel four: draft the real-world figures",
+      "title": "2.0L turbo-diesel four: draft the real figures",
       "size": "S",
       "auto": true,
       "depends": [
         "E04a"
       ],
-      "detail": "On the `d4m` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 2.0L turbo-diesel four, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "files": [
+        "src/data/upcoming.js"
+      ],
+      "detail": "In the `d4m` UPCOMING entry set done: 1 and add draft {cylinders, bore (m), stroke (m), compression, redline, firingOrder} with typical real figures for a 2.0L turbo-diesel four. Displacement from bore, stroke and cylinders must be within 5% of the name.",
       "acceptance": [
-        "draft present and plausible",
-        "done is 1",
+        "draft present",
+        "displacement within 5%",
         "`npm test` passes"
-      ]
-    },
-    {
-      "id": "P02",
-      "area": "part",
-      "title": "Add Dipstick and Oil filler cap",
-      "size": "S",
-      "auto": true,
-      "depends": [],
-      "detail": "Add both to src/data/catalog.js (system Lubrication), give each a complete src/data/anatomy.js entry (the anatomy test checks every part), and model them in src/engine3d/build.js with the exact part names.",
-      "acceptance": [
-        "Both parts appear in the index and on the plate",
-        "`npm test` passes (anatomy and guard tests)"
       ]
     },
     {
       "id": "E04c",
       "area": "engine",
-      "title": "2.0L turbo-diesel four: publish it in the atlas",
-      "size": "M",
+      "title": "2.0L turbo-diesel four: publish in the atlas",
+      "size": "S",
       "auto": true,
       "depends": [
         "E04b"
       ],
-      "detail": "Move `d4m` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming SUVs and pickups), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs d4m` and keep torque and power plausible for the class.",
+      "files": [
+        "src/data/engines.js",
+        "src/data/upcoming.js"
+      ],
+      "detail": "Add `d4m` to ENGINES in src/data/engines.js: copy the template entry shown below, apply the draft values, change id/short/name/sub, write `where` naming SUVs and pickups, and scale ratedTorque and inertia by displacement ratio. Then delete the `d4m` entry from UPCOMING. Run `node scripts/engine-report.mjs d4m`; peak power per litre should be 25–60 kW/L.",
       "acceptance": [
-        "Engine in ENGINES with every required field",
-        "UPCOMING entry removed",
-        "`npm test` passes including 3D, layout and physics tests",
-        "Peak torque and power plausible"
+        "Engine in ENGINES, removed from UPCOMING",
+        "`npm test` passes",
+        "engine-report values plausible"
+      ],
+      "template": "diesel"
+    },
+    {
+      "id": "P02",
+      "area": "part",
+      "title": "Dipstick and oil filler cap",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
+      ],
+      "detail": "Add parts \"Dipstick\" and \"Oil filler cap\" (system Lubrication): catalogue rows, ANATOMY entries, and one simple mesh each in src/engine3d/build.js with userData.part set to the exact name.",
+      "acceptance": [
+        "Both parts in catalogue, anatomy and 3D",
+        "`npm test` passes"
       ]
     },
     {
       "id": "E05a",
       "area": "engine",
-      "title": "3.5L V6: announce it as \"Building\"",
+      "title": "3.5L V6: announce as \"Building\"",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add an entry for the 3.5L V6 (large SUVs and minivans) to UPCOMING in src/data/upcoming.js with id `v6l`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "files": [
+        "src/data/upcoming.js"
+      ],
+      "detail": "Add one entry to UPCOMING in src/data/upcoming.js: id `v6l`, short, name \"3.5L V6\", sub \"large SUVs and minivans\", done: 0. Nothing else.",
       "acceptance": [
-        "Entry added to UPCOMING with done 0",
-        "`npm test` passes",
-        "Picker shows the building tile"
-      ]
-    },
-    {
-      "id": "P03",
-      "area": "part",
-      "title": "Add Engine mounts",
-      "size": "S",
-      "auto": true,
-      "depends": [],
-      "detail": "Add `Engine mount` (system Structure): catalogue row, anatomy entry, and 3D model (rubber-and-steel mounts at the block sides). Include it in the first peel layer or leave it for the last, and say why.",
-      "acceptance": [
-        "Part appears in the index and 3D view",
+        "Entry added with done 0",
         "`npm test` passes"
       ]
     },
     {
       "id": "E05b",
       "area": "engine",
-      "title": "3.5L V6: draft the real-world figures",
+      "title": "3.5L V6: draft the real figures",
       "size": "S",
       "auto": true,
       "depends": [
         "E05a"
       ],
-      "detail": "On the `v6l` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 3.5L V6, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "files": [
+        "src/data/upcoming.js"
+      ],
+      "detail": "In the `v6l` UPCOMING entry set done: 1 and add draft {cylinders, bore (m), stroke (m), compression, redline, firingOrder} with typical real figures for a 3.5L V6. Displacement from bore, stroke and cylinders must be within 5% of the name.",
       "acceptance": [
-        "draft present and plausible",
-        "done is 1",
+        "draft present",
+        "displacement within 5%",
         "`npm test` passes"
       ]
     },
     {
       "id": "E05c",
       "area": "engine",
-      "title": "3.5L V6: publish it in the atlas",
-      "size": "M",
+      "title": "3.5L V6: publish in the atlas",
+      "size": "S",
       "auto": true,
       "depends": [
         "E05b"
       ],
-      "detail": "Move `v6l` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming large SUVs and minivans), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs v6l` and keep torque and power plausible for the class.",
+      "files": [
+        "src/data/engines.js",
+        "src/data/upcoming.js"
+      ],
+      "detail": "Add `v6l` to ENGINES in src/data/engines.js: copy the template entry shown below, apply the draft values, change id/short/name/sub, write `where` naming large SUVs and minivans, and scale ratedTorque and inertia by displacement ratio. Then delete the `v6l` entry from UPCOMING. Run `node scripts/engine-report.mjs v6l`; peak power per litre should be 25–60 kW/L.",
       "acceptance": [
-        "Engine in ENGINES with every required field",
-        "UPCOMING entry removed",
-        "`npm test` passes including 3D, layout and physics tests",
-        "Peak torque and power plausible"
+        "Engine in ENGINES, removed from UPCOMING",
+        "`npm test` passes",
+        "engine-report values plausible"
+      ],
+      "template": "v6"
+    },
+    {
+      "id": "P03",
+      "area": "part",
+      "title": "Engine mounts",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
+      ],
+      "detail": "Add part \"Engine mount\" (system Structure): catalogue row, ANATOMY entry, one simple mesh in src/engine3d/build.js named exactly \"Engine mount\".",
+      "acceptance": [
+        "Part in catalogue, anatomy and 3D",
+        "`npm test` passes"
       ]
     },
     {
       "id": "P04",
       "area": "part",
-      "title": "Add Knock sensor and Crankshaft position sensor",
+      "title": "Knock sensor",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Two small sensors: catalogue rows (system Ignition for knock, Timing for crank position), anatomy entries and 3D models. Mention in the anatomy what each tells the engine computer.",
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
+      ],
+      "detail": "Add part \"Knock sensor\" (system Ignition, petrol only): catalogue row with fuel restriction, ANATOMY entry, one simple mesh in build.js named exactly \"Knock sensor\".",
       "acceptance": [
-        "Both parts present in all engines",
+        "Part in catalogue, anatomy and 3D",
         "`npm test` passes"
       ]
     },
     {
       "id": "E06a",
       "area": "engine",
-      "title": "3.0L inline-six: announce it as \"Building\"",
+      "title": "3.0L inline-six: announce as \"Building\"",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add an entry for the 3.0L inline-six (premium sedans) to UPCOMING in src/data/upcoming.js with id `i6`, short, name, sub and done: 0. It then shows in the picker as \"Building 1/3\". Do not touch ENGINES.",
+      "files": [
+        "src/data/upcoming.js"
+      ],
+      "detail": "Add one entry to UPCOMING in src/data/upcoming.js: id `i6`, short, name \"3.0L inline-six\", sub \"premium sedans\", done: 0. Nothing else.",
       "acceptance": [
-        "Entry added to UPCOMING with done 0",
-        "`npm test` passes",
-        "Picker shows the building tile"
+        "Entry added with done 0",
+        "`npm test` passes"
       ]
     },
     {
       "id": "E06b",
       "area": "engine",
-      "title": "3.0L inline-six: draft the real-world figures",
+      "title": "3.0L inline-six: draft the real figures",
       "size": "S",
       "auto": true,
       "depends": [
         "E06a"
       ],
-      "detail": "On the `i6` UPCOMING entry add `draft` {cylinders, bore (m), stroke (m), compression, redline, firingOrder} using typical real figures for a 3.0L inline-six, and set done: 1. Displacement from bore, stroke and cylinders must match the name within 5%.",
+      "files": [
+        "src/data/upcoming.js"
+      ],
+      "detail": "In the `i6` UPCOMING entry set done: 1 and add draft {cylinders, bore (m), stroke (m), compression, redline, firingOrder} with typical real figures for a 3.0L inline-six. Displacement from bore, stroke and cylinders must be within 5% of the name.",
       "acceptance": [
-        "draft present and plausible",
-        "done is 1",
+        "draft present",
+        "displacement within 5%",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "E06c",
+      "area": "engine",
+      "title": "3.0L inline-six: publish in the atlas",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "E06b"
+      ],
+      "files": [
+        "src/data/engines.js",
+        "src/data/upcoming.js"
+      ],
+      "detail": "Add `i6` to ENGINES in src/data/engines.js: copy the template entry shown below, apply the draft values, change id/short/name/sub, write `where` naming premium sedans, and scale ratedTorque and inertia by displacement ratio. Then delete the `i6` entry from UPCOMING. Run `node scripts/engine-report.mjs i6`; peak power per litre should be 25–60 kW/L.",
+      "acceptance": [
+        "Engine in ENGINES, removed from UPCOMING",
+        "`npm test` passes",
+        "engine-report values plausible"
+      ],
+      "template": "i4"
+    },
+    {
+      "id": "P04b",
+      "area": "part",
+      "title": "Crankshaft position sensor",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
+      ],
+      "detail": "Add part \"Crankshaft position sensor\" (system Ignition): catalogue row, ANATOMY entry, one simple mesh in build.js named exactly \"Crankshaft position sensor\".",
+      "acceptance": [
+        "Part in catalogue, anatomy and 3D",
         "`npm test` passes"
       ]
     },
     {
       "id": "P05",
       "area": "part",
-      "title": "Add Variable valve timing actuator",
-      "size": "M",
+      "title": "Variable valve timing actuator",
+      "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add `Variable valve timing actuator` (system Valvetrain) on the camshaft nose: catalogue row, anatomy entry, 3D model, and add it to the camshaft peel layer in src/data/layers.js.",
-      "acceptance": [
-        "Part visible and selectable",
-        "Hidden with the camshafts layer; tests pass"
-      ]
-    },
-    {
-      "id": "E06c",
-      "area": "engine",
-      "title": "3.0L inline-six: publish it in the atlas",
-      "size": "M",
-      "auto": true,
-      "depends": [
-        "E06b"
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
       ],
-      "detail": "Move `i6` into ENGINES in src/data/engines.js (copy the nearest existing engine of the same fuel and layout, apply the draft, write `where` naming premium sedans), then delete its UPCOMING entry. Run `node scripts/engine-report.mjs i6` and keep torque and power plausible for the class.",
+      "detail": "Add part \"VVT actuator\" (system Valvetrain, petrol only): catalogue row, ANATOMY entry, one simple mesh near the camshaft in build.js named exactly \"VVT actuator\".",
       "acceptance": [
-        "Engine in ENGINES with every required field",
-        "UPCOMING entry removed",
-        "`npm test` passes including 3D, layout and physics tests",
-        "Peak torque and power plausible"
+        "Part in catalogue, anatomy and 3D",
+        "`npm test` passes"
       ]
     },
     {
       "id": "P06",
       "area": "part",
-      "title": "Add Timing cover and Crankshaft seal",
+      "title": "Timing cover",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add both (system Timing / Structure): catalogue, anatomy, 3D. The timing cover should hide with the first peel layer so the chain is visible after.",
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
+      ],
+      "detail": "Add part \"Timing cover\" (system Timing): catalogue row, ANATOMY entry, one simple mesh in build.js named exactly \"Timing cover\".",
       "acceptance": [
-        "Parts present; layer order sensible",
+        "Part in catalogue, anatomy and 3D",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "P06b",
+      "area": "part",
+      "title": "Crankshaft seal",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
+      ],
+      "detail": "Add part \"Crankshaft seal\" (system Lubrication): catalogue row, ANATOMY entry, one simple mesh in build.js named exactly \"Crankshaft seal\".",
+      "acceptance": [
+        "Part in catalogue, anatomy and 3D",
         "`npm test` passes"
       ]
     },
     {
       "id": "P07",
       "area": "part",
-      "title": "Add Coolant hoses and Expansion tank",
+      "title": "Expansion tank",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add both to the Cooling system: catalogue, anatomy and 3D models connecting radiator, pump and thermostat. Add the hoses to the Coolant tour in src/data/layers.js.",
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
+      ],
+      "detail": "Add part \"Expansion tank\" (system Cooling): catalogue row, ANATOMY entry, one simple mesh in build.js named exactly \"Expansion tank\".",
       "acceptance": [
-        "Parts present; Coolant tour updated",
+        "Part in catalogue, anatomy and 3D",
         "`npm test` passes"
       ]
     },
     {
-      "id": "U01",
-      "area": "ui",
-      "title": "Deep links: #engine=\u2026&part=\u2026&layer=\u2026",
+      "id": "P07b",
+      "area": "part",
+      "title": "Coolant hoses",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Read and write the URL hash so a link opens a given engine, part and layer, and so the browser back button steps through selections. Keep `?debug` working.",
+      "files": [
+        "src/data/catalog.js",
+        "src/data/anatomy.js",
+        "src/engine3d/build.js"
+      ],
+      "detail": "Add part \"Coolant hose\" (system Cooling): catalogue row, ANATOMY entry, one simple mesh in build.js named exactly \"Coolant hose\".",
       "acceptance": [
-        "Opening a link restores engine, part and layer",
-        "Invalid values fall back to defaults without errors"
+        "Part in catalogue, anatomy and 3D",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U01a",
+      "area": "ui",
+      "title": "Deep links: read the address",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/ui/hash.js",
+        "tests/hash.test.js"
+      ],
+      "detail": "Add a pure function parseHash(hash) in a new src/ui/hash.js returning {engine, part, layer} from \"#engine=i4&part=Piston&layer=2\" (unknown values ignored) and a vitest test tests/hash.test.js.",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U01b",
+      "area": "ui",
+      "title": "Deep links: apply and write the address",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "U01a"
+      ],
+      "files": [
+        "src/main.js",
+        "src/ui/hash.js"
+      ],
+      "detail": "In src/main.js use parseHash on load to select engine/part/layer, and update location.hash when they change (history.replaceState).",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
@@ -441,75 +600,47 @@
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Press `?` to show a small dialog listing every shortcut (/, [, ], arrows in tours, space in Run engine, Esc). Make it accessible (focus trap, Esc to close).",
+      "files": [
+        "src/main.js",
+        "src/style.css"
+      ],
+      "detail": "Pressing \"?\" opens a small dialog listing the existing shortcuts (\"/\", \"[\", \"]\"). Add it in src/main.js with a close button and Escape to close.",
       "acceptance": [
-        "Dialog opens and closes by keyboard",
-        "Listed shortcuts all work"
-      ]
-    },
-    {
-      "id": "U03",
-      "area": "ui",
-      "title": "Dark theme",
-      "size": "M",
-      "auto": true,
-      "depends": [],
-      "detail": "Add a dark theme for the page shell that follows `prefers-color-scheme` with a manual toggle in the header. Charts read their colours from CSS variables; keep contrast at WCAG AA.",
-      "acceptance": [
-        "Both themes look right on Engine, Learn and Compare",
-        "Toggle persists (try/catch around storage)"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
       "id": "U04",
       "area": "ui",
-      "title": "Engine picker that scales to ten engines",
+      "title": "Engine picker for ten engines",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "The picker is a 2\u00d72 grid. Group engines by kind (petrol, diesel, V) and keep it usable with ten entries without pushing the parts index off screen.",
+      "files": [
+        "src/style.css"
+      ],
+      "detail": "Make .engineList scroll or wrap cleanly with 10 or more engines (CSS only, src/style.css); keep the Building tile spanning the row.",
       "acceptance": [
-        "Ten engines fit comfortably on desktop and phone",
-        "Selection and keyboard behaviour unchanged"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
       "id": "U05",
       "area": "ui",
-      "title": "Loading state and WebGL fallback",
+      "title": "Loading state",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Show a skeleton while the first engine builds, and a clear message with a link to the Learn tab if WebGL is unavailable instead of a blank stage.",
+      "files": [
+        "src/main.js",
+        "src/style.css"
+      ],
+      "detail": "Show a short \"Loading engine…\" message in the stage until the first frame renders. Only touch src/main.js and src/style.css.",
       "acceptance": [
-        "No blank stage in either case",
-        "Message is announced to screen readers"
-      ]
-    },
-    {
-      "id": "U06",
-      "area": "ui",
-      "title": "Automatic performance mode",
-      "size": "M",
-      "auto": true,
-      "depends": [],
-      "detail": "Measure frame time for two seconds after load. If the device is slow, reduce pixel ratio and shadow-map size and say so in a small notice with an option to switch back.",
-      "acceptance": [
-        "Setting applied without rebuilding the model",
-        "Notice dismissible; tests for the threshold logic"
-      ]
-    },
-    {
-      "id": "U07",
-      "area": "ui",
-      "title": "Phone layout: part page as a bottom sheet",
-      "size": "M",
-      "auto": true,
-      "depends": [],
-      "detail": "On narrow screens show the selected part page as a draggable bottom sheet over the 3D view (1:1 pointer tracking, spring settle, respects reduced motion) instead of a long page below.",
-      "acceptance": [
-        "Sheet can be dragged and released with momentum",
-        "Works with touch and keyboard"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
@@ -519,114 +650,359 @@
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "While the search box has text, dim the numbered pins that do not match and pulse the ones that do. Clearing the search restores everything.",
+      "files": [
+        "src/main.js"
+      ],
+      "detail": "While the search box has text, call the existing highlight for every matching part; clear when empty.",
       "acceptance": [
-        "Matching pins emphasised, others dimmed",
-        "No effect when the search is empty"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
-      "id": "U09",
+      "id": "U03a",
       "area": "ui",
-      "title": "Export the plate as an image",
-      "size": "M",
+      "title": "Dark theme: colour tokens",
+      "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "A button that saves the current 3D view with its numbered markers and a legend as a PNG (canvas composite, no new dependencies).",
+      "files": [
+        "src/style.css"
+      ],
+      "detail": "In src/style.css add a `@media (prefers-color-scheme: dark)` block redefining the :root colour variables only for the light panels (rail, inspector, page). Do not touch the stage.",
       "acceptance": [
-        "PNG contains view, numbers and legend",
-        "Works at devicePixelRatio > 1"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
-      "id": "U10",
+      "id": "U03b",
       "area": "ui",
-      "title": "Accessibility pass",
-      "size": "M",
+      "title": "Dark theme: toggle button",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "U03a"
+      ],
+      "files": [
+        "src/main.js",
+        "src/style.css"
+      ],
+      "detail": "Add a small Theme button in the header that toggles a data-theme attribute on <html> and remembers it in localStorage (try/catch). Make the dark tokens also apply under :root[data-theme=\"dark\"].",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U06a",
+      "area": "ui",
+      "title": "Performance mode: decide",
+      "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Check focus order, visible focus, ARIA labels on the stage controls and pins, colour contrast, and reduced-motion handling for the camera spring and layer changes. Fix what you find.",
+      "files": [
+        "src/ui/perf.js",
+        "tests/perf.test.js"
+      ],
+      "detail": "Add pure function pickQuality(frameTimesMs) in a new src/ui/perf.js returning \"high\" or \"low\" (low when median frame > 24 ms) and a vitest test.",
       "acceptance": [
-        "Keyboard-only walkthrough of every control works",
-        "Findings and fixes listed in the PR description"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
-      "id": "C01",
+      "id": "U06b",
+      "area": "ui",
+      "title": "Performance mode: apply",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "U06a"
+      ],
+      "files": [
+        "src/scene.js",
+        "src/main.js"
+      ],
+      "detail": "In src/scene.js and main.js lower the renderer pixel ratio to 1 when pickQuality returns \"low\" after 60 frames.",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U07a",
+      "area": "ui",
+      "title": "Phone: part page as a bottom sheet",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/style.css"
+      ],
+      "detail": "At max-width 860px make the part card (.inspector) a fixed bottom sheet with a drag-handle look: max-height 60vh, rounded top, scroll inside. CSS only.",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U07b",
+      "area": "ui",
+      "title": "Phone: sheet open/close",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "U07a"
+      ],
+      "files": [
+        "src/main.js",
+        "src/style.css"
+      ],
+      "detail": "Add a close button to the part card that collapses the sheet on phones, and re-open it when a part is selected.",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U09a",
+      "area": "ui",
+      "title": "Export: capture function",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/scene.js"
+      ],
+      "detail": "Add `capture()` to the stage in src/scene.js returning a PNG data URL of the current frame (render then canvas.toDataURL).",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U09b",
+      "area": "ui",
+      "title": "Export: button",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "U09a"
+      ],
+      "files": [
+        "src/main.js"
+      ],
+      "detail": "Add an \"Export image\" button to the toolbar that downloads the PNG from stage.capture() named after the engine.",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U10a",
+      "area": "ui",
+      "title": "Accessibility: labels",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/main.js",
+        "tests/a11y.test.js"
+      ],
+      "detail": "Give every icon-only or unlabeled button and input in src/main.js an aria-label; add a test that scans the HTML template string for <button> without text or aria-label.",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "U10b",
+      "area": "ui",
+      "title": "Accessibility: focus ring",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/style.css"
+      ],
+      "detail": "Add a visible :focus-visible outline (2px, high contrast) for buttons, chips, pins and sliders in src/style.css.",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "C01a",
+      "area": "content",
+      "title": "Glossary data",
+      "size": "S",
+      "auto": true,
+      "depends": [],
+      "files": [
+        "src/data/glossary.js",
+        "tests/glossary.test.js"
+      ],
+      "detail": "Create src/data/glossary.js exporting GLOSSARY: 20 entries {term, plain} (BMEP, TDC, compression ratio, firing order, knock, etc.) in plain language, and tests/glossary.test.js checking unique terms and plain text between 40 and 220 characters.",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "C01b",
+      "area": "content",
+      "title": "Glossary view",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "C01a"
+      ],
+      "files": [
+        "src/views/glossary.js"
+      ],
+      "detail": "Create src/views/glossary.js that renders GLOSSARY as a searchable list, exporting mountGlossary(root).",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "C01c",
       "area": "content",
       "title": "Glossary tab",
-      "size": "M",
+      "size": "S",
       "auto": true,
-      "depends": [],
-      "detail": "Add a Glossary section (new view in src/views) with about 50 plain-language terms (BMEP, compression ratio, torque, valve overlap, knock, lambda\u2026), searchable, with terms linking to the parts that use them.",
+      "depends": [
+        "C01b"
+      ],
+      "files": [
+        "src/main.js",
+        "src/views/glossary.js"
+      ],
+      "detail": "Add a Glossary tab next to Learn and Compare in src/main.js that mounts it.",
       "acceptance": [
-        "At least 50 terms, alphabetical, searchable",
-        "Each term links to at least one part where relevant"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
-      "id": "C02",
+      "id": "C02a",
       "area": "content",
-      "title": "Quiz of 20 questions linked to parts",
-      "size": "M",
+      "title": "Quiz questions",
+      "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Extend src/quiz.js to 20 questions drawn at random 5 per round, each explanation linking to the related part page. Keep the existing setupQuiz API.",
+      "files": [
+        "src/data/quiz.js",
+        "tests/quiz-data.test.js"
+      ],
+      "detail": "Create src/data/quiz.js with 20 multiple-choice questions {q, options[4], answer, partName, why} where partName is a real catalogue part, and tests/quiz-data.test.js checking answers are in range and part names exist.",
       "acceptance": [
-        "20 questions, no duplicates, correct answers verified",
-        "Explanations link to part pages"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
-      "id": "C03",
+      "id": "C02b",
       "area": "content",
-      "title": "Symptom finder",
-      "size": "M",
+      "title": "Quiz uses the new questions",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "C02a"
+      ],
+      "files": [
+        "src/quiz.js"
+      ],
+      "detail": "Make src/quiz.js read its questions from src/data/quiz.js (keep its existing behaviour).",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "C03a",
+      "area": "content",
+      "title": "Symptom data",
+      "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "A \"Something sounds wrong\" page: choose a symptom (blue smoke, ticking, overheating\u2026) and see the likely parts from the `notice` text in anatomy.js, each linking to its part page. Build the symptom map as data with a test.",
+      "files": [
+        "src/data/symptoms.js",
+        "tests/symptoms.test.js"
+      ],
+      "detail": "Create src/data/symptoms.js with 12 entries {symptom, causes:[partName,...], note} using real catalogue part names, and a test that all part names exist.",
       "acceptance": [
-        "At least 12 symptoms mapped to real parts",
-        "Test checks every referenced part exists"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
+      ]
+    },
+    {
+      "id": "C03b",
+      "area": "content",
+      "title": "Symptom finder view",
+      "size": "S",
+      "auto": true,
+      "depends": [
+        "C03a"
+      ],
+      "files": [
+        "src/views/symptoms.js"
+      ],
+      "detail": "Create src/views/symptoms.js (mountSymptoms(root, onPart)) listing symptoms; clicking a cause calls onPart(partName).",
+      "acceptance": [
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
       "id": "C04",
       "area": "content",
-      "title": "More tours: spark and start-up",
+      "title": "Spark tour",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add \"Follow the spark\" (petrol only) and \"Start the engine\" tours to src/data/layers.js and the tour chip row. Existing tours must keep working for all engines.",
+      "files": [
+        "src/data/layers.js"
+      ],
+      "detail": "Add a guided tour \"Spark and start-up\" to TOURS in src/data/layers.js with 6 steps using real part names.",
       "acceptance": [
-        "Both tours run on every applicable engine",
-        "Tour tests extended"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
       "id": "C05",
       "area": "content",
-      "title": "Per-engine notes",
+      "title": "Per-engine note",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add a short \"what makes this engine different\" paragraph to each engine in src/data/engines.js (`notes`) and show it in the \"This engine\" card.",
+      "files": [
+        "src/data/engines.js",
+        "src/main.js"
+      ],
+      "detail": "Add an optional `note` (one sentence of everyday trivia) to each engine in src/data/engines.js and show it under \"Found in\".",
       "acceptance": [
-        "Every engine has notes of at least 40 characters",
-        "Shown in the UI"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
       "id": "C06",
       "area": "content",
-      "title": "Learn tab: how to read this atlas",
+      "title": "Learn tab: how to read the atlas",
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Add a short illustrated guide at the top of Learn: what the numbers and colours mean, how layers and tours work.",
+      "files": [
+        "src/views/learn.js"
+      ],
+      "detail": "Add a short \"How to read this atlas\" card at the top of src/views/learn.js.",
       "acceptance": [
-        "Guide present and accurate to the current UI",
-        "No layout regressions on phone width"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
@@ -636,10 +1012,13 @@
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Load Learn, Compare and the audio module with dynamic import() so the first load is smaller. Check the built output sizes and report before/after.",
+      "files": [
+        "src/main.js"
+      ],
+      "detail": "Load src/views/compare.js lazily: replace its static import in src/main.js with a dynamic import() that runs the first time the Compare tab opens. Do not touch the vite config.",
       "acceptance": [
-        "Entry chunk smaller than 400 kB",
-        "All tabs and sound still work"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
@@ -649,10 +1028,13 @@
       "size": "S",
       "auto": true,
       "depends": [],
-      "detail": "Extract the pin de-overlap function, the tour-step filtering and the layer logic from main.js into small modules and cover them with tests.",
+      "files": [
+        "tests/ui.test.js"
+      ],
+      "detail": "Add tests for the pure helpers in src/ui (tach scale, callout placement) in tests/ui.test.js.",
       "acceptance": [
-        "Logic moved without behaviour change",
-        "New tests pass"
+        "Change is small and limited to the files listed",
+        "`npm test` passes"
       ]
     },
     {
@@ -674,9 +1056,9 @@
       "size": "L",
       "auto": false,
       "depends": [],
-      "detail": "Add a 4.0 L 90\u00b0 V8 (id `v8`). The existing layout code handles only 60\u00b0 V6 pin phasing; extend `makeLayout` for a cross-plane V8 (firing order 1-8-4-3-6-5-7-2) without changing the results for the existing engines. Add layout tests for the new case.",
+      "detail": "Add a 4.0 L 90° V8 (id `v8`). The existing layout code handles only 60° V6 pin phasing; extend `makeLayout` for a cross-plane V8 (firing order 1-8-4-3-6-5-7-2) without changing the results for the existing engines. Add layout tests for the new case.",
       "acceptance": [
-        "makeLayout supports eight cylinders in two 90\u00b0 banks",
+        "makeLayout supports eight cylinders in two 90° banks",
         "Existing engines produce identical layouts (tests prove it)",
         "New engine passes all guard tests"
       ]
@@ -688,7 +1070,7 @@
       "size": "L",
       "auto": false,
       "depends": [],
-      "detail": "Needs a new horizontally opposed layout in makeLayout and the 3D builder (cylinders lying along \u00b1Z, opposed crank pins). This is a design task, so a human or an interactive session should plan it first.",
+      "detail": "Needs a new horizontally opposed layout in makeLayout and the 3D builder (cylinders lying along ±Z, opposed crank pins). This is a design task, so a human or an interactive session should plan it first.",
       "acceptance": [
         "New layout kind `flat` supported end to end",
         "All tests pass; model reviewed visually"
