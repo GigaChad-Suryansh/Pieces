@@ -11,10 +11,14 @@
     "E03a"
   ],
   "blocked": [],
-  "consecutive_failures": 0,
-  "last_run": "2026-11-03T10:46:19.729Z",
-  "last_outcome": "verified",
-  "current_task": "F03 — Show \"Found in\" for every engine in Compare",
-  "last_failure": null,
-  "notes": "E03a built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
+  "consecutive_failures": 1,
+  "last_run": "2026-11-05T10:43:29.850Z",
+  "last_outcome": "failed_verification",
+  "current_task": "Retry F03",
+  "last_failure": {
+    "id": "F03",
+    "note": "### tests failed \u001b[31m \u001b[31m×\u001b[31m renders a \"Found in\" row with engine locations\u001b[39m\u001b[32m 5\u001b[2mms\u001b[22m\u001b[39m ::error file=/home/runner/work/Pieces/Pieces/tests/ui.test.js,title=tests/ui.test.js > mountCompare > renders a \"Found in\" row with engine locations,line=6,column=18::ReferenceError: document is not defined%0A ❯ tests/ui.test.js:6:18%0A%0A \u001b[41m\u001b[1m FAIL \u001b[22m\u001b[49m tests/ui.test.js\u001b[2m > \u001b[22mmountCompare\u001b[2m > \u001b[22mrenders a \"Found in\" row with engine locations \u001b[31m\u001b[1mReferenceError\u001b[",
+    "at": "2026-11-05T10:43:29.850Z"
+  },
+  "notes": "Last run: the agent's changes did not pass the checks and were discarded by the workflow. Nothing was marked complete."
 }

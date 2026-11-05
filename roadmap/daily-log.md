@@ -117,3 +117,14 @@ Each entry records one GitHub Actions run. Persistent state lives in progress.js
 
 ---
 
+## Day 12 — 2026-11-05
+
+- **Run:** [#18](https://github.com/GigaChad-Suryansh/Pieces/actions/runs/42012449651) (schedule)
+- **Item:** F03 Show "Found in" for every engine in Compare
+- **Gemini:** failure (gemini-3.6-flash)
+- **Independent verification (roadmap + tests + build):** FAILED
+- **Repair attempt:** failure
+- **Work discarded:** src/views/compare.js, tests/ui.test.js
+
+---
+
