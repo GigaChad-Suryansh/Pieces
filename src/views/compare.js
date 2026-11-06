@@ -31,6 +31,7 @@ export function mountCompare(root, { ENGINES, pick }) {
     </div>
     <div class="tableWrap"><table class="cmpTable"><thead><tr><th></th>${ids.map((id) => `<th><i style="--c:${COLORS[id]}"></i>${ENGINES[id].name}<small>${ENGINES[id].sub}</small></th>`).join('')}</tr></thead><tbody>
       ${[
+        ['Found in', (s) => s.where],
         ['Displacement', (s) => disp(s).toFixed(2) + ' L'], ['Cylinders', (s) => s.cylinders], ['Bore × stroke', (s) => `${(s.bore * 1000).toFixed(0)} × ${(s.stroke * 1000).toFixed(0)} mm`],
         ['Compression', (s) => s.compression + ':1'], ['Redline', (s) => s.redline.toLocaleString('en-US') + ' rpm'], ['Fuel', (s) => (s.fuel === 'diesel' ? 'Diesel, turbo' : 'Petrol')],
         ['Peak torque', (s, id) => `${data[id].tq.toFixed(0)} Nm @ ${data[id].tqAt}`], ['Peak power', (s, id) => `${data[id].pw.toFixed(0)} kW @ ${data[id].pwAt}`],
