@@ -10,13 +10,14 @@
     "E02c",
     "E03a",
     "F03",
-    "E03b"
+    "E03b",
+    "E03c"
   ],
   "blocked": [],
   "consecutive_failures": 0,
-  "last_run": "2026-11-07T09:55:25.831Z",
+  "last_run": "2026-11-08T10:07:32.579Z",
   "last_outcome": "verified",
-  "current_task": "E03c — 1.5L turbo-diesel four: publish in the atlas",
+  "current_task": "P01a — Rocker arm: catalogue and anatomy text",
   "last_failure": null,
-  "notes": "E03b built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
+  "notes": "E03c built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
 }
