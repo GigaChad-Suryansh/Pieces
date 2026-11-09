@@ -39,6 +39,7 @@ const rows = [
   ['Valvetrain', 'Exhaust valve', 'Opens to let burnt gas out. It runs far hotter than the intake valve.'],
   ['Valvetrain', 'Valve spring', 'Snaps the valve shut and keeps it following the cam.'],
   ['Valvetrain', 'Rocker arm', 'A lever between cam and valve in engines that do not push the valve directly. This engine does not use one.'],
+  ['Valvetrain', 'Roller finger follower', 'A small lever that sits between the camshaft and the valve, using a roller to reduce friction.'],
   ['Valvetrain', 'Valve guide', 'A sleeve in the head that keeps the valve stem straight.'],
   ['Valvetrain', 'Valve seat', 'The hardened ring the valve closes against. It seals the combustion chamber.'],
   ['Timing', 'Timing chain / belt', 'Links the crank to both camshafts so valves and pistons stay in step.'],

@@ -150,6 +150,13 @@ export const ANATOMY = {
     'Tapping from the top of the engine.',
     '200,000 km or more.',
     ['Camshaft', 'Intake valve', 'Exhaust valve']),
+  'Roller finger follower': A(
+    'A small lever that sits between the camshaft and the valve. It uses a roller to follow the cam lobe, which reduces friction and wear compared to a flat bucket.',
+    'Forged steel or stamped sheet metal with a hardened steel needle-bearing roller.',
+    'The needle bearings in the roller can fail, or the pivot point can wear.',
+    'A ticking or tapping noise from the top of the engine that rises with RPM.',
+    'Life of the engine, though a failure can occur if lubrication is poor.',
+    ['Camshaft', 'Intake valve', 'Exhaust valve']),
   'Valve guide': A(
     'A tube pressed into the head that keeps the valve stem running straight and in line with its seat.',
     'Bronze alloy or cast iron, pressed into the aluminium head.',

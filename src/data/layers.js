@@ -3,7 +3,7 @@ export const LAYERS = [
   { label: 'Complete engine', remove: [] },
   { label: 'Accessories and plumbing off', remove: ['Radiator', 'Cooling fan', 'Alternator', 'Starter motor', 'Air filter', 'Throttle body', 'Intake manifold', 'Exhaust manifold', 'Turbocharger', 'Intercooler', 'Catalytic converter', 'Oxygen sensor', 'EGR valve', 'Fuel rail', 'Fuel injector', 'Water pump', 'Thermostat', 'Oil filter', 'Crank pulley', 'Ignition coil'] },
   { label: 'Valve cover lifted off', remove: ['Valve cover', 'Spark plug', 'Glow plug'] },
-  { label: 'Camshafts and timing drive off', remove: ['Camshaft', 'Cam lobe', 'Timing chain / belt', 'Timing tensioner', 'Timing guide', 'Rocker arm'] },
+  { label: 'Camshafts and timing drive off', remove: ['Camshaft', 'Cam lobe', 'Timing chain / belt', 'Timing tensioner', 'Timing guide', 'Rocker arm', 'Roller finger follower'] },
   { label: 'Cylinder head off', remove: ['Cylinder head', 'Head gasket', 'Intake valve', 'Exhaust valve', 'Valve spring', 'Valve guide', 'Valve seat'] },
   { label: 'Block off: the moving parts', remove: ['Engine block', 'Cylinder liner', 'Coolant jacket', 'Oil pan / sump', 'Oil gallery', 'Oil jet'] },
 ];
