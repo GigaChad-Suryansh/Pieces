@@ -265,6 +265,7 @@ export function buildEngine(spec, opts = {}) {
           const vg = group(valveG, vx, 0, zRow);
           reg(kind === 'intake' ? valveGeoI : valveGeoE, kind === 'intake' ? M.steel : M.heat, kind === 'intake' ? 'Intake valve' : 'Exhaust valve', 'Valvetrain', vg);
           reg(bucketGeo, M.forged, kind === 'intake' ? 'Intake valve' : 'Exhaust valve', 'Valvetrain', vg);
+          reg(box(0.022, 0.01, 0.03), M.steel, 'Roller finger follower', 'Valvetrain', vg).position.set(0, 0.085, 0);
           reg(retainerGeo, M.brass, kind === 'intake' ? 'Intake valve' : 'Exhaust valve', 'Valvetrain', vg);
           const sp = reg(springGeo, M.chrome, 'Valve spring', 'Valvetrain', valveG);
           sp.position.set(vx, 0.016, zRow);
