@@ -169,3 +169,13 @@ Each entry records one GitHub Actions run. Persistent state lives in progress.js
 
 ---
 
+## Day 17 — 2026-11-10
+
+- **Run:** [#23](https://github.com/GigaChad-Suryansh/Pieces/actions/runs/42803266354) (schedule)
+- **Item:** E04a 2.0L turbo-diesel four: announce as "Building"
+- **Gemini:** success (fallback model) (gemini-3-flash-preview)
+- **Independent verification (roadmap + tests + build):** passed
+- **Repair attempt:** skipped
+
+---
+
