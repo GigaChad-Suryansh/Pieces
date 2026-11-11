@@ -13,13 +13,14 @@
     "E03b",
     "E03c",
     "P01a",
-    "E04a"
+    "E04a",
+    "E04b"
   ],
   "blocked": [],
   "consecutive_failures": 0,
-  "last_run": "2026-11-10T11:02:10.013Z",
+  "last_run": "2026-11-11T10:39:15.589Z",
   "last_outcome": "verified",
-  "current_task": "E04b — 2.0L turbo-diesel four: draft the real figures",
+  "current_task": "E04c — 2.0L turbo-diesel four: publish in the atlas",
   "last_failure": null,
-  "notes": "E04a built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
+  "notes": "E04b built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
 }
