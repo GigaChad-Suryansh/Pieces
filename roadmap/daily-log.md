@@ -190,3 +190,14 @@ Each entry records one GitHub Actions run. Persistent state lives in progress.js
 
 ---
 
+## Day 19 — 2026-11-12
+
+- **Run:** [#25](https://github.com/GigaChad-Suryansh/Pieces/actions/runs/43203847488) (schedule)
+- **Item:** E04c 2.0L turbo-diesel four: publish in the atlas
+- **Gemini:** success (gemini-3.6-flash)
+- **Independent verification (roadmap + tests + build):** passed
+- **Repair attempt:** skipped
+- **Summary:** {   "session_id": "361a034a-cc6a-44d1-8996-67ef347ba4c8",   "response": "Published the 2.0L turbo-diesel four (`d4m`) into the atlas:\n\n- **`src/data/engines.js`**: Added the `d4m` engine definition, applying draft specs (bore 0.081 m, stroke 0.0955 m, compression 16.5, redline 4800 RPM, firing order `[1, 3, 4, 2]`) with `ratedTorque` (375 N·m) and `inertia` (0.27 kg·m²) scaled by the ~0.894 displacement ratio against the 2.2L template engine. Added `where` text covering SUVs and pickups.\n- **`src/data/upcoming.js`**: Removed `d4m` from `UPCOMING` now that it is published in `ENGINES`.\n- **Validation**:\n  - `node scripts/engine-report.mjs d4m`: 1.97 L displacement, peak power 89 kW @ 3750 RPM (45 kW/L, within the 25–60 kW/L expected range), peak torque 264 N·m @ 3000 RPM.\n  - `npm tes
+
+---
+
