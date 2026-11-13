@@ -65,6 +65,8 @@ const rows = [
   ['Lubrication', 'Oil filter', 'Traps metal particles and soot so they stay out of the bearings.'],
   ['Lubrication', 'Oil gallery', 'Drilled passages that carry oil to the bearings and the valvetrain.'],
   ['Lubrication', 'Oil jet', 'Squirts oil at the underside of the piston to cool it.'],
+  ['Lubrication', 'Dipstick', 'A flexible metal rod used to check the oil level in the sump.'],
+  ['Lubrication', 'Oil filler cap', 'A removable cap on the valve cover for adding engine oil.'],
   ['Exhaust', 'Catalytic converter', 'A honeycomb coated in precious metals that turns the worst pollutants into harmless gases.'],
   ['Exhaust', 'Oxygen sensor', 'Reads the oxygen left in the exhaust so the engine computer can trim the fuel.'],
   ['Exhaust', 'EGR valve', 'Feeds a little exhaust back into the intake to cut combustion temperature and emissions.'],

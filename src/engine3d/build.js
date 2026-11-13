@@ -245,7 +245,7 @@ export function buildEngine(spec, opts = {}) {
       for (const sz of [-1, 1]) for (let i = 0; i < 7; i++) ridges.push(box(blen * 0.8, 0.003, 0.0035, 0, coverTop + 0.0015, sz * (0.045 + i * 0.0085)));
       reg(merge(ridges), M.cover, 'Valve cover', 'Structure', coverG).position.set(bxc, 0, 0);
       const cap = merge([cylY(0.019, coverTop - 0.002, coverTop + 0.014, 30), cylY(0.0215, coverTop + 0.014, coverTop + 0.019, 30)]);
-      reg(cap, M.blackOxide, 'Valve cover', 'Structure', coverG).position.set(bx1 - 0.04, 0, side * 0.052);
+      reg(cap, M.blackOxide, 'Oil filler cap', 'Lubrication', coverG).position.set(bx1 - 0.04, 0, side * 0.052);
     }
 
     // Valvetrain: valves, springs, buckets, guides, seats
@@ -585,6 +585,16 @@ export function buildEngine(spec, opts = {}) {
     const filterMesh = reg(filter, M.blueAnod, 'Oil filter', 'Lubrication', galG);
     filterMesh.position.set(xf + 0.075, 0.0, fSide * (isV ? 0.15 : 0.145));
     filterMesh.rotation.y = fSide < 0 ? Math.PI : 0;
+
+    // Dipstick
+    const dipG = group(root);
+    asm(dipG, [0, 1, 0], 0.1);
+    const dTube = cylY(0.005, -0.1, 0.12, 12);
+    const dRing = circleShape(0.014);
+    addHole(dRing, 0, 0, 0.009);
+    const dHandle = plateX(dRing, 0.005).rotateZ(Math.PI / 2).translate(0, 0.134, 0);
+    const dMesh = reg(merge([dTube, dHandle]), M.blackOxide, 'Dipstick', 'Lubrication', dipG);
+    dMesh.position.set(xf + 0.04, 0, fSide * (isV ? 0.17 : 0.16));
   }
 
   // ---- front accessories: water pump, alternator, belt, thermostat, radiator, fan -----------------------

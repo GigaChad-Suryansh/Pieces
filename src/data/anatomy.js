@@ -332,6 +332,20 @@ export const ANATOMY = {
     'High oil temperature under load, and in the worst case a damaged piston.',
     'The whole life of the engine.',
     ['Piston', 'Oil gallery', 'Engine block']),
+  'Dipstick': A(
+    'A flexible metal rod that reaches into the oil pan. It allows the driver to check the oil level and its condition manually.',
+    'A flat or round steel strip with a plastic handle and marks for minimum and maximum levels.',
+    'The handle can crack with heat, or the O-ring on the handle can fail and cause a small leak.',
+    'Low oil level on the stick, or oil weeping from the tube if the seal is bad.',
+    'Life of the engine.',
+    ['Oil pan / sump', 'Engine block']),
+  'Oil filler cap': A(
+    'A removable cap that seals the opening where engine oil is added. It is usually located on the highest point of the engine, the valve cover.',
+    'Moulded plastic or cast metal, with a rubber gasket and often an oil-can symbol.',
+    'The gasket hardens and leaks; the cap can be left loose or lost.',
+    'Oil weeping onto the valve cover, or a burning-oil smell as leaks hit the exhaust.',
+    'Life of the engine; the gasket may need replacing after 10 years.',
+    ['Valve cover', 'Oil pan / sump']),
   'Catalytic converter': A(
     'A honeycomb coated in platinum, palladium and rhodium that turns carbon monoxide, unburnt fuel and nitrogen oxides into carbon dioxide, water and nitrogen.',
     'A ceramic or metal honeycomb in a stainless-steel can.',
