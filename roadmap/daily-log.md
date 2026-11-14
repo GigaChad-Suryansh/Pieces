@@ -211,3 +211,14 @@ Each entry records one GitHub Actions run. Persistent state lives in progress.js
 
 ---
 
+## Day 21 — 2026-11-14
+
+- **Run:** [#27](https://github.com/GigaChad-Suryansh/Pieces/actions/runs/43583258189) (schedule)
+- **Item:** E05a 3.5L V6: announce as "Building"
+- **Gemini:** success (gemini-3.6-flash)
+- **Independent verification (roadmap + tests + build):** passed
+- **Repair attempt:** skipped
+- **Summary:** Added the 3.5L V6 (`v6l`) engine entry to `UPCOMING` in `src/data/upcoming.js` as stage 0 ("Announced").  ### Summary of Changes - **`src/data/upcoming.js`**: Added `{ id: 'v6l', short: '3.5L V6', name: '3.5L V6', sub: 'large SUVs and minivans', done: 0 }`.  ### Verification - `npm test`: 89 tests passed across 4 test files (including roadmap and engine upcoming checks). - `npm run build`: Vite build completed successfully without errors.
+
+---
+
