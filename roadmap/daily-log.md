@@ -222,3 +222,14 @@ Each entry records one GitHub Actions run. Persistent state lives in progress.js
 
 ---
 
+## Day 22 — 2026-11-15
+
+- **Run:** [#28](https://github.com/GigaChad-Suryansh/Pieces/actions/runs/43704978494) (schedule)
+- **Item:** E05b 3.5L V6: draft the real figures
+- **Gemini:** success (gemini-3.6-flash)
+- **Independent verification (roadmap + tests + build):** passed
+- **Repair attempt:** skipped
+- **Summary:** {   "session_id": "bc713c89-c25a-44e2-bf41-d1862071a2a0",   "response": "### Summary of Changes\n\n- **`src/data/upcoming.js`**: Advanced `done` to `1` for entry `v6l` (\"3.5L V6\") and added draft specifications:\n  - `cylinders`: 6\n  - `bore`: 0.094 m (94.0 mm)\n  - `stroke`: 0.083 m (83.0 mm)\n  - `compression`: 10.8\n  - `redline`: 6600 rpm\n  - `firingOrder`: `[1, 6, 3, 5, 2, 4]`\n\n### Verification\n\n- Calculated displacement: ~3.456 L, within 1.26% of nominal 3.5L (< 5% threshold).\n- `npm test`: 89 tests passed across 4 test suites.\n- `npm run build`: Vite production build completed successfully.",   "stats": {     "models": {       "gemini-3.6-flash": {         "api": {           "totalRequests": 11,           "totalErrors": 1,           "totalLatencyMs": 18976,           "erro
+
+---
+
