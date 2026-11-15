@@ -9,6 +9,14 @@ export const UPCOMING = [
     short: '3.5L V6',
     name: '3.5L V6',
     sub: 'large SUVs and minivans',
-    done: 0,
+    done: 1,
+    draft: {
+      cylinders: 6,
+      bore: 0.094,
+      stroke: 0.083,
+      compression: 10.8,
+      redline: 6600,
+      firingOrder: [1, 6, 3, 5, 2, 4],
+    },
   },
 ];
