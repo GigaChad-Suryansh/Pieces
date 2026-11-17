@@ -381,4 +381,11 @@ export const ANATOMY = {
     'A battery warning light, dim headlights and a flat battery.',
     '150,000–200,000 km.',
     ['Crank pulley', 'Starter motor']),
+  'Engine mount': A(
+    'Flexible supports that hold the engine securely in the vehicle frame while damping vibrations so they do not reach the cabin.',
+    'Cast aluminium or steel brackets bonded to thick rubber or hydraulic damping pads.',
+    'Rubber perishes, cracks or tears from age, engine torque or oil contamination.',
+    'Vibration in the cabin, engine shudder when accelerating or shifting gears, and a clunking noise under load.',
+    '8–12 years or 150,000–200,000 km.',
+    ['Engine block', 'Oil pan / sump']),
 };

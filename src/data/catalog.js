@@ -24,6 +24,7 @@ const rows = [
   ['Structure', 'Head gasket', 'A multi-layer steel seal between block and head. It keeps combustion gas, oil and coolant apart.'],
   ['Structure', 'Valve cover', 'Covers the valvetrain and keeps the oil in.'],
   ['Structure', 'Oil pan / sump', 'The reservoir at the bottom that collects oil and sheds heat.'],
+  ['Structure', 'Engine mount', 'Flexible supports that hold the engine in the car and damp vibration.'],
   ['Motion', 'Piston', 'Takes the pressure of combustion and pushes the connecting rod. Its grooves hold the rings.'],
   ['Motion', 'Piston rings', 'Seal the gap between piston and wall, wipe oil away and pass heat to the cylinder.'],
   ['Motion', 'Wrist pin', 'The hardened pin that joins the piston to the small end of the connecting rod.'],
