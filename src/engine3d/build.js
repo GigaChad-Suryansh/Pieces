@@ -550,6 +550,15 @@ export function buildEngine(spec, opts = {}) {
     const caseG = group(root);
     const lower = prism(roundedRectShape(lenX + 0.004, isV ? 0.236 : 0.19, 0.02), 0.082, 0.004);
     reg(lower, diesel ? M.iron : M.alloy, 'Engine block', 'Structure', caseG).position.set(xc, -0.062, 0);
+    // engine mounts on sides of the block
+    const mountBracket = box(0.035, 0.025, 0.025);
+    const mountPad = cylZ(0.016, 0.035, 20).translate(0, -0.015, 0);
+    const mountGeo = merge([mountBracket, mountPad]);
+    for (const sx of [xMin + 0.04, xMax - 0.04]) {
+      for (const sz of [-1, 1]) {
+        reg(mountGeo, M.alloyDark, 'Engine mount', 'Structure', caseG).position.set(sx, -0.07, sz * (isV ? 0.135 : 0.11));
+      }
+    }
     // ladder frame / bearing caps
     const capsGeo = [];
     for (const sx of crank.userData.mains) capsGeo.push(box(0.021, 0.036, 0.1, sx, -0.045, 0), cylY(0.0085, -0.063, -0.054).translate(sx, 0, 0.05), cylY(0.0085, -0.063, -0.054).translate(sx, 0, -0.05));
