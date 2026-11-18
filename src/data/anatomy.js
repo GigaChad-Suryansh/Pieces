@@ -262,6 +262,13 @@ export const ANATOMY = {
     'A misfire on one cylinder, a flashing check-engine light and a shaking engine.',
     '100,000–150,000 km.',
     ['Spark plug', 'Valve cover']),
+  'Knock sensor': A(
+    'A piezoelectric microphone bolted to the engine block. It listens for the specific high-frequency vibration of "knocking" or "pinging" — uncontrolled combustion that can destroy an engine.',
+    'A ceramic crystal element inside a plastic housing, with a steel center bolt.',
+    'The internal crystal cracks or the wiring harness fails.',
+    'The engine computer may retard ignition timing, reducing power and fuel economy; a check-engine light is common.',
+    '150,000–250,000 km; usually lasts the life of the engine.',
+    ['Engine block', 'Ignition coil']),
   'Glow plug': A(
     'A small electric heater in each diesel cylinder. It warms the air so that a cold engine can start.',
     'A heating element in a steel sheath, often with a ceramic tip.',
