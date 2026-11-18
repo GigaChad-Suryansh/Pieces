@@ -202,6 +202,13 @@ export function buildEngine(spec, opts = {}) {
         reg(ringY(bore / 2 + 0.0098, bore / 2 + 0.0042, deckY - 0.112, deckY - 0.01, 56), M.coolant, 'Coolant jacket', 'Cooling', g).position.set(c.x, 0, 0);
         reg(ringY(bore / 2 + 0.0042, bore / 2, L - r - 0.048, deckY - 0.0004, 64), M.liner, 'Cylinder liner', 'Structure', g).position.set(c.x, 0, 0);
       }
+      if (!diesel) {
+        const ks = merge([
+          cylY(0.012, 0, 0.012, 16),
+          cylY(0.0045, -0.002, 0.014, 12),
+        ]);
+        reg(ks, M.plastic, 'Knock sensor', 'Ignition', g).position.set(bxc, deckY - 0.1, -0.091);
+      }
     }
     // Head gasket (steel layer with bore holes)
     const gasketG = group(g);
