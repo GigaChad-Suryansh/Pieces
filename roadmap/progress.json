@@ -22,13 +22,14 @@
     "E05c",
     "P03",
     "P04",
-    "E06a"
+    "E06a",
+    "E06b"
   ],
   "blocked": [],
   "consecutive_failures": 0,
-  "last_run": "2026-11-19T11:27:39.094Z",
+  "last_run": "2026-11-20T11:16:18.195Z",
   "last_outcome": "verified",
-  "current_task": "E06b — 3.0L inline-six: draft the real figures",
+  "current_task": "E06c — 3.0L inline-six: publish in the atlas",
   "last_failure": null,
-  "notes": "E06a built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
+  "notes": "E06b built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
 }
