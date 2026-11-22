@@ -269,6 +269,13 @@ export const ANATOMY = {
     'The engine computer may retard ignition timing, reducing power and fuel economy; a check-engine light is common.',
     '150,000–250,000 km; usually lasts the life of the engine.',
     ['Engine block', 'Ignition coil']),
+  'Crankshaft position sensor': A(
+    'Reports the exact angle and speed of the crankshaft to the engine computer. This is the heartbeat of the engine, used to time every spark and fuel injection.',
+    'A Hall-effect sensor or inductive pickup in a plastic housing, often with a magnetic tip.',
+    'Heat and vibration eventually break the internal coil or the wiring connector.',
+    'The engine may stall, misfire, or refuse to start at all. Often it fails only when hot.',
+    '120,000–200,000 km.',
+    ['Crankshaft', 'Flywheel / flexplate', 'Ignition coil', 'Fuel injector']),
   'Glow plug': A(
     'A small electric heater in each diesel cylinder. It warms the air so that a cold engine can start.',
     'A heating element in a steel sheath, often with a ceramic tip.',

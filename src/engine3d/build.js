@@ -566,6 +566,9 @@ export function buildEngine(spec, opts = {}) {
         reg(mountGeo, M.alloyDark, 'Engine mount', 'Structure', caseG).position.set(sx, -0.07, sz * (isV ? 0.135 : 0.11));
       }
     }
+    // Crankshaft position sensor
+    const cps = merge([cylZ(0.009, 0, 0.032, 12), cylZ(0.012, 0.02, 0.028, 12), box(0.016, 0.022, 0.01, 0, 0.01, 0.032)]);
+    reg(cps, M.plastic, 'Crankshaft position sensor', 'Ignition', caseG).position.set(xr - 0.02, -0.045, isV ? 0.095 : 0.08);
     // ladder frame / bearing caps
     const capsGeo = [];
     for (const sx of crank.userData.mains) capsGeo.push(box(0.021, 0.036, 0.1, sx, -0.045, 0), cylY(0.0085, -0.063, -0.054).translate(sx, 0, 0.05), cylY(0.0085, -0.063, -0.054).translate(sx, 0, -0.05));
