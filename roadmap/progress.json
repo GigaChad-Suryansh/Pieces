@@ -24,13 +24,14 @@
     "P04",
     "E06a",
     "E06b",
-    "E06c"
+    "E06c",
+    "P04b"
   ],
   "blocked": [],
   "consecutive_failures": 0,
-  "last_run": "2026-11-21T10:53:37.251Z",
+  "last_run": "2026-11-22T11:03:55.419Z",
   "last_outcome": "verified",
-  "current_task": "P04b — Crankshaft position sensor",
+  "current_task": "P05 — Variable valve timing actuator",
   "last_failure": null,
-  "notes": "E06c built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
+  "notes": "P04b built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
 }

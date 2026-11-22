@@ -57,6 +57,7 @@ const rows = [
   ['Ignition', 'Spark plug', 'Makes the spark that lights the mixture in a petrol engine.', 'petrol'],
   ['Ignition', 'Ignition coil', 'Steps battery voltage up to the many thousands of volts a spark needs.', 'petrol'],
   ['Ignition', 'Knock sensor', 'A microphone that listens for the "ping" of abnormal combustion.', 'petrol'],
+  ['Ignition', 'Crankshaft position sensor', 'Monitors the speed and position of the crankshaft to time ignition and fuel injection.'],
   ['Ignition', 'Glow plug', 'A heater that makes a cold diesel start easily.', 'diesel'],
   ['Cooling', 'Water pump', 'Circulates coolant through the block, head and radiator.'],
   ['Cooling', 'Thermostat', 'Holds coolant in until the engine is warm, then lets it flow to the radiator.'],
