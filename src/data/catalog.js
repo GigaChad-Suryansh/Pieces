@@ -43,6 +43,7 @@ const rows = [
   ['Valvetrain', 'Roller finger follower', 'A small lever that sits between the camshaft and the valve, using a roller to reduce friction.'],
   ['Valvetrain', 'Valve guide', 'A sleeve in the head that keeps the valve stem straight.'],
   ['Valvetrain', 'Valve seat', 'The hardened ring the valve closes against. It seals the combustion chamber.'],
+  ['Valvetrain', 'VVT actuator', 'A hydraulic phaser that rotates the camshaft relative to its drive gear to change valve timing.', 'petrol'],
   ['Timing', 'Timing chain / belt', 'Links the crank to both camshafts so valves and pistons stay in step.'],
   ['Timing', 'Timing tensioner', 'Keeps the chain taut as it wears.'],
   ['Timing', 'Timing guide', 'A plastic blade that steadies the chain and stops it whipping.'],
