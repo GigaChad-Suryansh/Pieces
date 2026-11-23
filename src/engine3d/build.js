@@ -305,7 +305,7 @@ export function buildEngine(spec, opts = {}) {
       // cam sprocket + phaser
       const xt = xf - 0.006 - (isV && bank.id === 2 ? 0.016 : 0);
       reg(gearX(0.0508, 0.0468, 40, 0.012, 0.014), M.blackOxide, 'Timing chain / belt', 'Timing', cam).position.set(xt, 0, 0);
-      reg(cylX(0.021, 0.02, 24), M.blueAnod, 'Camshaft', 'Valvetrain', cam).position.set(xt - 0.014, 0, 0);
+      reg(cylX(0.021, 0.02, 24), diesel ? M.steel : M.blueAnod, diesel ? 'Camshaft' : 'VVT actuator', 'Valvetrain', cam).position.set(xt - 0.014, 0, 0);
       ref.cams.push({ cam, kind });
     }
 

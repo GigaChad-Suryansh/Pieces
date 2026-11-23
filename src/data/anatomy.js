@@ -171,6 +171,13 @@ export const ANATOMY = {
     'Loss of compression, a misfire and poor starting.',
     '200,000 km or more.',
     ['Intake valve', 'Exhaust valve', 'Cylinder head']),
+  'VVT actuator': A(
+    'A hydraulic phaser that sits on the end of the camshaft. It uses oil pressure to rotate the cam a few degrees relative to its drive gear, advancing or retarding valve timing to improve power, economy and emissions.',
+    'Steel or aluminium body with internal vanes and a return spring.',
+    'Internal seals wear or the oil-control solenoid sticks, often due to sludge from neglected oil changes.',
+    'Rough idle, a rattle from the front of the engine, poor performance and a check-engine light.',
+    '150,000–250,000 km with regular oil changes.',
+    ['Camshaft', 'Timing chain / belt', 'Oil gallery']),
   'Timing chain / belt': A(
     'Links the crankshaft to the camshafts, so the valves open at exactly the right moment for each piston position. It is what keeps the whole engine in step.',
     'A steel roller chain, or a toothed rubber belt reinforced with fibre cord.',
