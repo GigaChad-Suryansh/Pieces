@@ -47,6 +47,7 @@ const rows = [
   ['Timing', 'Timing chain / belt', 'Links the crank to both camshafts so valves and pistons stay in step.'],
   ['Timing', 'Timing tensioner', 'Keeps the chain taut as it wears.'],
   ['Timing', 'Timing guide', 'A plastic blade that steadies the chain and stops it whipping.'],
+  ['Timing', 'Timing cover', 'Protects the timing drive and keeps engine oil in.'],
   ['Air & fuel', 'Intake manifold', 'Shares the incoming air between the cylinders through individual runners.'],
   ['Air & fuel', 'Throttle body', 'Its flap sets how much air the engine can breathe.', 'petrol'],
   ['Air & fuel', 'Fuel rail', 'Holds pressurised fuel and feeds every injector.'],
