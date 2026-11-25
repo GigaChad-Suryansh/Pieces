@@ -199,6 +199,13 @@ export const ANATOMY = {
     'Chain noise at idle, and plastic fragments in the sump.',
     'Replace with the chain.',
     ['Timing chain / belt', 'Timing tensioner']),
+  'Timing cover': A(
+    'The front plate of the engine that seals the timing mechanism. It keeps engine oil inside and prevents dust or debris from damaging the timing chain or belt.',
+    'Cast aluminium or stamped steel, with a gasket and a front crankshaft seal.',
+    'Oil leaks from a hardened gasket or the crankshaft seal; cracks from impacts.',
+    'Oil spots on the ground at the front of the engine, or a damp, oily coating on the front of the block.',
+    'Life of the engine, though the front main seal often needs replacing after 150,000 km.',
+    ['Timing chain / belt', 'Crank pulley', 'Engine block', 'Cylinder head']),
   'Intake manifold': A(
     'Shares the air between the cylinders through separate runners. Their length and shape tune how much air each cylinder gets at different engine speeds.',
     'Moulded plastic in most modern cars, or cast aluminium.',
