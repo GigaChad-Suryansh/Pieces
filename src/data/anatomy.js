@@ -346,6 +346,13 @@ export const ANATOMY = {
     'Low oil pressure, or oil running down the side of the engine.',
     'Replace at every oil change — usually every 10,000–15,000 km.',
     ['Oil pump', 'Oil gallery']),
+  'Crankshaft seal': A(
+    'Keeps engine oil from leaking out where the crankshaft extends through the front and rear of the block or timing cover.',
+    'Synthetic rubber with a garter spring, bonded to a steel outer case.',
+    'Hardens and cracks with age and heat, causing an oil leak.',
+    'Oil drips under the engine, visible wetness around the crank pulley or flywheel.',
+    '150,000–250,000 km or 10–15 years.',
+    ['Crankshaft', 'Engine block', 'Crank pulley']),
   'Oil gallery': A(
     'Narrow passages drilled through the block, crank and head. They deliver pressurised oil to every bearing and to the valvetrain.',
     'Drilled channels inside the castings and the crankshaft.',

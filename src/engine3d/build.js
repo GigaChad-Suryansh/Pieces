@@ -623,6 +623,12 @@ export function buildEngine(spec, opts = {}) {
   const accG = group(root);
   asm(accG, [-1, 0, 0], 0.12);
   {
+    // crankshaft seal
+    const seal = merge([
+      C.ringX(0.034, 0.0205, 0.008, 32),
+      C.ringX(0.038, 0.034, 0.008, 32),
+    ]);
+    reg(seal, M.rubber, 'Crankshaft seal', 'Lubrication', accG).position.set(xf - 0.014, 0, 0);
     // water pump
     const wp = merge([cylX(0.05, 0.05, 36), cylX(0.034, 0.018, 28).translate(0.03, 0, 0)]);
     reg(wp, M.alloy, 'Water pump', 'Cooling', accG).position.set(xf - 0.022, wpPos[0], wpPos[1]);

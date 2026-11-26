@@ -68,6 +68,7 @@ const rows = [
   ['Cooling', 'Cooling fan', 'Pulls air through the radiator when the car is not moving fast enough.'],
   ['Lubrication', 'Oil pump', 'Draws oil from the sump and pushes it round the engine under pressure.'],
   ['Lubrication', 'Oil filter', 'Traps metal particles and soot so they stay out of the bearings.'],
+  ['Lubrication', 'Crankshaft seal', 'A flexible lip seal around the rotating crankshaft that keeps oil inside the engine block.'],
   ['Lubrication', 'Oil gallery', 'Drilled passages that carry oil to the bearings and the valvetrain.'],
   ['Lubrication', 'Oil jet', 'Squirts oil at the underside of the piston to cool it.'],
   ['Lubrication', 'Dipstick', 'A flexible metal rod used to check the oil level in the sump.'],
