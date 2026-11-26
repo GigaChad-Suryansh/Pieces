@@ -27,13 +27,14 @@
     "E06c",
     "P04b",
     "P05",
-    "P06"
+    "P06",
+    "P06b"
   ],
   "blocked": [],
   "consecutive_failures": 0,
-  "last_run": "2026-11-25T12:31:04.698Z",
+  "last_run": "2026-11-26T12:17:11.758Z",
   "last_outcome": "verified",
-  "current_task": "P06b — Crankshaft seal",
+  "current_task": "P07 — Expansion tank",
   "last_failure": null,
-  "notes": "P06 built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
+  "notes": "P06b built and verified by the workflow (tests and build). Visual changes still need a human look in the pull request."
 }
