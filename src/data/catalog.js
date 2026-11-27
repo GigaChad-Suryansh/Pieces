@@ -65,6 +65,7 @@ const rows = [
   ['Cooling', 'Thermostat', 'Holds coolant in until the engine is warm, then lets it flow to the radiator.'],
   ['Cooling', 'Coolant jacket', 'Passages that wrap each cylinder so coolant can carry heat away.'],
   ['Cooling', 'Radiator', 'Passes coolant heat to the air flowing through its fins.'],
+  ['Cooling', 'Expansion tank', 'A reservoir that allows coolant to expand as it heats up and traps air bubbles.'],
   ['Cooling', 'Cooling fan', 'Pulls air through the radiator when the car is not moving fast enough.'],
   ['Lubrication', 'Oil pump', 'Draws oil from the sump and pushes it round the engine under pressure.'],
   ['Lubrication', 'Oil filter', 'Traps metal particles and soot so they stay out of the bearings.'],
