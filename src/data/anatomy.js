@@ -325,6 +325,13 @@ export const ANATOMY = {
     'Overheating in traffic or on hills, and a coolant leak at the front of the car.',
     '8–15 years.',
     ['Cooling fan', 'Water pump', 'Thermostat']),
+  'Expansion tank': A(
+    'A reservoir that stores excess coolant as it expands with heat. It also provides a place for air bubbles to escape the cooling system, ensuring only liquid coolant circulates.',
+    'Translucent plastic (so the level can be seen) with a pressure-rated cap.',
+    'The plastic becomes brittle and cracks with age; the pressure cap seal fails.',
+    'Low coolant level, white residue from dried leaks, or overheating if it can no longer hold pressure.',
+    '8–12 years; the plastic eventually fails from heat cycles.',
+    ['Radiator', 'Water pump', 'Thermostat']),
   'Cooling fan': A(
     'Pulls air through the radiator when the car is slow or stopped. An electric motor switches it on only when the coolant needs it.',
     'A plastic fan with moulded blades, on a small electric motor.',

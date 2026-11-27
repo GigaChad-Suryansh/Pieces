@@ -1,7 +1,7 @@
 // Peel-away layers (outermost first) and guided tours. Part names match the catalogue.
 export const LAYERS = [
   { label: 'Complete engine', remove: [] },
-  { label: 'Accessories and plumbing off', remove: ['Radiator', 'Cooling fan', 'Alternator', 'Starter motor', 'Air filter', 'Throttle body', 'Intake manifold', 'Exhaust manifold', 'Turbocharger', 'Intercooler', 'Catalytic converter', 'Oxygen sensor', 'EGR valve', 'Fuel rail', 'Fuel injector', 'Water pump', 'Thermostat', 'Oil filter', 'Crank pulley', 'Ignition coil', 'Dipstick', 'Oil filler cap', 'Crankshaft position sensor'] },
+  { label: 'Accessories and plumbing off', remove: ['Radiator', 'Cooling fan', 'Expansion tank', 'Alternator', 'Starter motor', 'Air filter', 'Throttle body', 'Intake manifold', 'Exhaust manifold', 'Turbocharger', 'Intercooler', 'Catalytic converter', 'Oxygen sensor', 'EGR valve', 'Fuel rail', 'Fuel injector', 'Water pump', 'Thermostat', 'Oil filter', 'Crank pulley', 'Ignition coil', 'Dipstick', 'Oil filler cap', 'Crankshaft position sensor'] },
   { label: 'Valve cover lifted off', remove: ['Valve cover', 'Spark plug', 'Glow plug'] },
   { label: 'Camshafts and timing drive off', remove: ['Camshaft', 'Cam lobe', 'Timing chain / belt', 'Timing tensioner', 'Timing guide', 'Rocker arm', 'Roller finger follower'] },
   { label: 'Cylinder head off', remove: ['Cylinder head', 'Head gasket', 'Intake valve', 'Exhaust valve', 'Valve spring', 'Valve guide', 'Valve seat'] },
@@ -67,10 +67,11 @@ export const TOURS = {
       S('Water pump', 'Pushes coolant through the engine. Without it the engine overheats in minutes.'),
       S('Coolant jacket', 'Coolant flows through passages around each cylinder and soaks up heat.'),
       S('Cylinder head', 'The hottest part of the engine, around the valves and combustion chambers, is cooled here.'),
-      S('Thermostat', 'It stays closed until the engine is warm, then opens and lets coolant go on to the radiator.'),
+      S('Thermostat', 'It stays closed until the engine is warm, then lets it flow to the radiator.'),
       S('Radiator', 'Air flowing through the fins carries the heat out of the coolant.'),
+      S('Expansion tank', 'Excess coolant expands into this reservoir, and any air bubbles are trapped here.'),
       S('Cooling fan', 'When the car is slow or stopped, this fan pulls air through the radiator.'),
-    ],
+      ],
   },
   exhaust: {
     label: 'Exhaust', color: '#c4452a',

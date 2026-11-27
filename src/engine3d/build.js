@@ -670,6 +670,8 @@ export function buildEngine(spec, opts = {}) {
     reg(C.finPack(0.034, 0.288, 0.332, 34, 0.0006), M.fin, 'Radiator', 'Cooling', coolG).position.set(rx + 0.0, 0.1, 0);
     reg(tube([[thermoPos[0] - 0.02, thermoPos[1] + 0.04, 0.0], [xf - 0.08, thermoPos[1] + 0.08, 0.04], [rx + 0.04, 0.265, 0.12]], 0.0185, 24, 14), M.hoseBlue, 'Radiator', 'Cooling', coolG);
     reg(tube([[xf - 0.04, wpPos[0] - 0.01, wpPos[1] * 0.6], [xf - 0.09, -0.02, 0.17], [rx + 0.04, -0.07, 0.12]], 0.0185, 24, 14), M.hoseBlue, 'Radiator', 'Cooling', coolG);
+    const et = merge([box(0.07, 0.09, 0.07), cylY(0.025, 0.045, 0.06, 16)]);
+    reg(et, M.plastic, 'Expansion tank', 'Cooling', coolG).position.set(rx + 0.0, 0.3, -0.15);
     const shroud = merge([ringY(0.158, 0.145, -0.008, 0.008, 48).rotateZ(Math.PI / 2)]);
     reg(shroud, M.plastic, 'Cooling fan', 'Cooling', coolG).position.set(rx + 0.052, 0.1, 0);
     const fan = reg(C.fanGeometry(0.14, 7), M.plastic, 'Cooling fan', 'Cooling', coolG);
@@ -687,7 +689,7 @@ export function buildEngine(spec, opts = {}) {
   // ---- bounds + helpers ------------------------------------------------------------------------------------
   root.updateMatrixWorld(true);
   // Frame the engine itself: leave out the radiator, tail pipe and other far-flung hardware.
-  const periphery = new Set(['Radiator', 'Cooling fan', 'Intercooler', 'Catalytic converter', 'Oxygen sensor', 'Air filter', 'Starter motor', 'EGR valve', 'Alternator', 'Water pump', 'Thermostat']);
+  const periphery = new Set(['Radiator', 'Cooling fan', 'Intercooler', 'Catalytic converter', 'Oxygen sensor', 'Air filter', 'Starter motor', 'EGR valve', 'Alternator', 'Water pump', 'Thermostat', 'Expansion tank']);
   const box3 = new THREE.Box3();
   for (const p of parts) if (!periphery.has(p.userData.part) && !p.isInstancedMesh) box3.expandByObject(p);
   const bounds = { center: box3.getCenter(new THREE.Vector3()), size: box3.getSize(new THREE.Vector3()) };
